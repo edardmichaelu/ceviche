@@ -17,7 +17,7 @@ interface CajaHeaderProps {
     isDarkMode: boolean;
     setIsDarkMode: (value: boolean) => void;
     onToggleSidebar: () => void;
-    user: { usuario: string; };
+    user: { usuario: string; avatar?: string | null; };
 }
 
 export default function CajaHeader({ isDarkMode, setIsDarkMode, onToggleSidebar, user }: CajaHeaderProps) {

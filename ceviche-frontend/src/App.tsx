@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AppLayout } from './layouts/AppLayout';
 import { MeseroLayout } from './layouts/MeseroLayout';
 import { CocinaLayout } from './layouts/CocinaLayout';
+import { CajaLayout } from './layouts/CajaLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { UserManagementPage } from './pages/UserManagementPage';
@@ -165,6 +166,21 @@ function App() {
             <Route path="reservas" element={<div>Reservas - Próximamente</div>} />
             <Route path="estadisticas" element={<div>Estadísticas - Próximamente</div>} />
             <Route path="notificaciones" element={<div>Notificaciones - Próximamente</div>} />
+          </Route>
+
+          {/* Rutas de Caja con su propio Layout (fuera de AppLayout para evitar bucles) */}
+          <Route
+            path="/caja/*"
+            element={
+              !currentUser || currentUser.rol !== 'caja' ?
+              <Navigate to="/login" replace /> :
+              <CajaLayout user={currentUser} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate} />
+            }
+          >
+            <Route index element={<CajaPage />} />
+            <Route path="dashboard" element={<div>Dashboard de Caja</div>} />
+            <Route path="historial" element={<div>Historial de Pagos</div>} />
+            <Route path="reportes" element={<div>Reportes</div>} />
           </Route>
 
           {/* Rutas de Cocina con su propio Layout (fuera de AppLayout para evitar bucles) */}
