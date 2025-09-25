@@ -152,7 +152,7 @@ function App() {
             element={
               !currentUser || (currentUser.rol !== 'mozo' && currentUser.rol !== 'mesero') ?
               <Navigate to="/login" replace /> :
-              <MeseroLayout user={currentUser} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} />
+              <MeseroLayout user={currentUser} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate} />
             }
           >
             <Route index element={<VentaRapidaPage />} />
@@ -173,7 +173,7 @@ function App() {
             element={
               !currentUser || (currentUser.rol !== 'cocina' && currentUser.rol !== 'admin') ?
               <Navigate to="/login" replace /> :
-              <CocinaLayout user={currentUser} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} />
+              <CocinaLayout user={currentUser} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate} />
             }
           >
             <Route index element={<CocinaPage />} />

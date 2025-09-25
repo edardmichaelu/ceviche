@@ -57,17 +57,18 @@ export interface KanbanCardProps {
 }
 
 export interface CocinaSidebarProps {
-    user: { usuario: string; };
+    user: { usuario: string; avatar?: string | null; };
     onLogout: () => void;
     isSidebarOpen: boolean;
     isHeaderVisible: boolean;
+    onProfileUpdate?: (updatedUser: { usuario: string; avatar?: string | null; }) => void;
 }
 
 export interface CocinaHeaderProps {
     onToggleSidebar: () => void;
     onToggleHeader: () => void;
     isHeaderVisible: boolean;
-    user: { usuario: string; };
+    user: { usuario: string; avatar?: string | null; };
 }
 
 export interface CocinaStatsProps {

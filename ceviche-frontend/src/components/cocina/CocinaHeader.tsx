@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 // === COMPONENTE HEADER DE COCINA ===
-export function CocinaHeader({ onToggleSidebar, user }: { onToggleSidebar: () => void; user: { usuario: string; }; }) {
+export function CocinaHeader({ onToggleSidebar, user }: { onToggleSidebar: () => void; user: { usuario: string; avatar?: string | null; }; }) {
     return (
         <div className="flex-shrink-0 bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 p-4">
             <div className="flex items-center justify-between">

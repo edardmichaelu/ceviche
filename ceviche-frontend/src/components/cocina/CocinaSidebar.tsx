@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { ArrowLeftOnRectangleIcon, ChevronDownIcon, ClockIcon } from '@heroicons/react/24/solid';
+import { ArrowLeftOnRectangleIcon, ChevronDownIcon, ClockIcon, UserIcon } from '@heroicons/react/24/solid';
 import { CocinaSidebarProps } from '../../types/cocina.types';
+import { ProfileEditModal } from '../admin/ProfileEditModal';
 
 // === CONFIGURACIÓN DE NAVEGACIÓN ===
 export const COCINA_NAV_ITEMS = [
@@ -33,11 +34,21 @@ export const COCINA_NAV_ITEMS = [
 ];
 
 // === COMPONENTE SIDEBAR DE COCINA ===
-export function CocinaSidebar({ user, onLogout, isSidebarOpen, isHeaderVisible }: CocinaSidebarProps) {
+export function CocinaSidebar({ user, onLogout, isSidebarOpen, isHeaderVisible, onProfileUpdate }: CocinaSidebarProps) {
     const location = window.location;
     const baseLinkClasses = "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors duration-200";
     const hoverClasses = "hover:bg-orange-100 dark:hover:bg-slate-700";
     const activeLinkClasses = "bg-orange-600 text-white shadow-lg";
+
+    // Estado para el modal de perfil
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+    const getAvatarUrl = () => {
+        if (user.avatar) {
+            return user.avatar;
+        }
+        return `https://ui-avatars.com/api/?name=${user.usuario.charAt(0)}&background=e2e8f0&color=475569&bold=true`;
+    };
 
     // Estado para estadísticas en tiempo real
     const [stats, setStats] = useState({
@@ -98,6 +109,7 @@ export function CocinaSidebar({ user, onLogout, isSidebarOpen, isHeaderVisible }
     }, []);
 
     return (
+        <>
         <aside className={`bg-white dark:bg-slate-800 shadow-lg flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
             <div className="p-3 text-center border-b dark:border-slate-700 h-[65px] flex items-center justify-center overflow-hidden">
                 <h1 className={`text-xl font-bold text-orange-500 whitespace-nowrap transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>🍳 Cocina</h1>
@@ -156,7 +168,7 @@ export function CocinaSidebar({ user, onLogout, isSidebarOpen, isHeaderVisible }
                 <Menu as="div" className="relative w-full text-left">
                     <div>
                         <Menu.Button className="group w-full flex items-center gap-3 rounded-md p-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-700">
-                            <img src={`https://ui-avatars.com/api/?name=${user.usuario.charAt(0)}&background=e2e8f0&color=475569&bold=true`} className="w-8 h-8 rounded-full flex-shrink-0" alt="Cocinero avatar" />
+                            <img src={getAvatarUrl()} className="w-8 h-8 rounded-full flex-shrink-0" alt="Cocinero avatar" />
                             <div className={`flex-grow text-left overflow-hidden transition-opacity duration-200 ${!isSidebarOpen ? 'opacity-0' : 'opacity-100'}`}>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.usuario}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Cocinero</p>
@@ -178,6 +190,19 @@ export function CocinaSidebar({ user, onLogout, isSidebarOpen, isHeaderVisible }
                                 <Menu.Item>
                                     {({ active }) => (
                                         <button
+                                            onClick={() => setIsProfileModalOpen(true)}
+                                            className={`${
+                                                active ? 'bg-gray-100 dark:bg-slate-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'
+                                            } group flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors duration-200`}
+                                        >
+                                            <UserIcon className="h-4 w-4" />
+                                            Editar Perfil
+                                        </button>
+                                    )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                    {({ active }) => (
+                                        <button
                                             onClick={onLogout}
                                             className={`${
                                                 active ? 'bg-gray-100 dark:bg-slate-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'
@@ -194,5 +219,18 @@ export function CocinaSidebar({ user, onLogout, isSidebarOpen, isHeaderVisible }
                 </Menu>
             </div>
         </aside>
+
+        {/* Modal de Editar Perfil */}
+        <ProfileEditModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            onSuccess={(updatedUser) => {
+                setIsProfileModalOpen(false);
+                if (onProfileUpdate && updatedUser) {
+                    onProfileUpdate(updatedUser);
+                }
+            }}
+        />
+        </>
     );
 }

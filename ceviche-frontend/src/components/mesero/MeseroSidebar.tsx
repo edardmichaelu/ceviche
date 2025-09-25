@@ -1,14 +1,16 @@
 import { NavLink } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import {
     TableCellsIcon,
     CubeIcon,
     ArrowLeftOnRectangleIcon,
     ChevronDownIcon,
     TagIcon,
-    DocumentTextIcon
+    DocumentTextIcon,
+    UserIcon
 } from '@heroicons/react/24/solid';
+import { ProfileEditModal } from '../admin/ProfileEditModal';
 
 const MESERO_NAV_ITEMS = [
     {
@@ -64,17 +66,27 @@ const MESERO_NAV_ITEMS = [
 ];
 
 interface MeseroSidebarProps {
-    user: { usuario: string; };
+    user: { usuario: string; avatar?: string | null; };
     onLogout: () => void;
     isSidebarOpen: boolean;
+    onProfileUpdate?: (updatedUser: { usuario: string; avatar?: string | null; }) => void;
 }
 
-export function MeseroSidebar({ user, onLogout, isSidebarOpen }: MeseroSidebarProps) {
+export function MeseroSidebar({ user, onLogout, isSidebarOpen, onProfileUpdate }: MeseroSidebarProps) {
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const baseLinkClasses = "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors duration-200";
     const hoverClasses = "hover:bg-blue-100 dark:hover:bg-slate-700";
     const activeLinkClasses = "bg-blue-600 text-white shadow-lg";
 
+    const getAvatarUrl = () => {
+        if (user.avatar) {
+            return user.avatar;
+        }
+        return `https://ui-avatars.com/api/?name=${user.usuario.charAt(0)}&background=e2e8f0&color=475569&bold=true`;
+    };
+
     return (
+        <>
         <aside className={`bg-white dark:bg-slate-800 shadow-lg flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
             <div className="p-3 text-center border-b dark:border-slate-700 h-[65px] flex items-center justify-center overflow-hidden">
                 <h1 className={`text-xl font-bold text-blue-500 whitespace-nowrap transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>🍽️ Mesero</h1>
@@ -99,7 +111,7 @@ export function MeseroSidebar({ user, onLogout, isSidebarOpen }: MeseroSidebarPr
                 <Menu as="div" className="relative w-full text-left">
                     <div>
                         <Menu.Button className="group w-full flex items-center gap-3 rounded-md p-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-700">
-                            <img src={`https://ui-avatars.com/api/?name=${user.usuario.charAt(0)}&background=e2e8f0&color=475569&bold=true`} className="w-8 h-8 rounded-full flex-shrink-0" alt="Mesero avatar" />
+                            <img src={getAvatarUrl()} className="w-8 h-8 rounded-full flex-shrink-0" alt="Mesero avatar" />
                             <div className={`flex-grow text-left overflow-hidden transition-opacity duration-200 ${!isSidebarOpen ? 'opacity-0' : 'opacity-100'}`}>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.usuario}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Mesero</p>
@@ -121,6 +133,19 @@ export function MeseroSidebar({ user, onLogout, isSidebarOpen }: MeseroSidebarPr
                                 <Menu.Item>
                                     {({ active }) => (
                                         <button
+                                            onClick={() => setIsProfileModalOpen(true)}
+                                            className={`${
+                                                active ? 'bg-gray-100 dark:bg-slate-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'
+                                            } group flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors duration-200`}
+                                        >
+                                            <UserIcon className="h-4 w-4" />
+                                            Editar Perfil
+                                        </button>
+                                    )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                    {({ active }) => (
+                                        <button
                                             onClick={onLogout}
                                             className={`${
                                                 active ? 'bg-gray-100 dark:bg-slate-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'
@@ -137,5 +162,18 @@ export function MeseroSidebar({ user, onLogout, isSidebarOpen }: MeseroSidebarPr
                 </Menu>
             </div>
         </aside>
+
+        {/* Modal de Editar Perfil */}
+        <ProfileEditModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            onSuccess={(updatedUser) => {
+                setIsProfileModalOpen(false);
+                if (onProfileUpdate && updatedUser) {
+                    onProfileUpdate(updatedUser);
+                }
+            }}
+        />
+        </>
     );
 }
