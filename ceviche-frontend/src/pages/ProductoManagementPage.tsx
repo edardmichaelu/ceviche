@@ -1281,6 +1281,36 @@ const ProductoManagementPage: React.FC = () => {
                   </label>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      📦 Stock Actual
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.stock}
+                      onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Cantidad en inventario"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      ⚠️ Alerta de Stock
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.alerta_stock}
+                      onChange={(e) => setFormData({...formData, alerta_stock: parseInt(e.target.value) || 5})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Límite para alertas"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex items-center">
                   <input
                     type="checkbox"
