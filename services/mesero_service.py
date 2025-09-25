@@ -44,6 +44,22 @@ class MeseroService:
         return layout
 
     @staticmethod
+    def get_layout_public():
+        """
+        Devuelve una estructura anidada de todo el layout del restaurante para uso público.
+        Similar a get_layout() pero sin requerir autenticación.
+        """
+        return MeseroService.get_layout()
+
+    @staticmethod
+    def get_layout_realtime_public():
+        """
+        Devuelve una estructura anidada del restaurante con datos en tiempo real para uso público.
+        Similar a get_layout_with_realtime_data() pero sin requerir autenticación.
+        """
+        return MeseroService.get_layout_with_realtime_data()
+
+    @staticmethod
     def get_layout_with_realtime_data():
         """
         Devuelve una estructura anidada del restaurante con datos en tiempo real.

@@ -90,8 +90,8 @@ export function MeseroPage() {
         const layoutData = layoutResponse.data || layoutResponse;
         setLayout(layoutData);
 
-        // Cargar estadísticas
-        const statsResponse = await apiClient.get('/api/mesero/estadisticas/estados');
+        // Cargar estadísticas (ruta pública)
+        const statsResponse = await apiClient.getPublic('/api/mesero/public/estadisticas/estados');
         const statsData = statsResponse.data || statsResponse;
         
         // Calcular estadísticas
@@ -170,7 +170,7 @@ export function MeseroPage() {
       toast.success(`✅ Mesa ${mesaId} actualizada a ${nuevoEstado}`);
       
       // Recargar datos
-      const endpoint = useRealtimeData ? '/mesero/public/layout/realtime' : '/mesero/public/layout';
+      const endpoint = useRealtimeData ? '/api/mesero/public/layout/realtime' : '/api/mesero/public/layout';
       const response = await apiClient.getPublic(endpoint);
       setLayout(response.data || response);
     } catch (error: any) {
@@ -183,6 +183,53 @@ export function MeseroPage() {
     try {
       const response = await apiClient.getPublic(endpoint);
       setLayout(response.data || response);
+
+      // Recargar estadísticas también
+      const statsResponse = await apiClient.getPublic('/api/mesero/public/estadisticas/estados');
+      const statsData = statsResponse.data || statsResponse;
+
+      // Recalcular estadísticas
+      const totalMesas = response.data.reduce((total: number, piso: Piso) =>
+        total + piso.zonas.reduce((zonaTotal: number, zona: Zona) =>
+          zonaTotal + zona.mesas.length, 0
+        ), 0
+      );
+
+      const estados = {
+        disponible: 0,
+        ocupada: 0,
+        reservada: 0,
+        limpieza: 0,
+        mantenimiento: 0,
+        cerrada: 0
+      };
+
+      response.data.forEach((piso: Piso) => {
+        piso.zonas.forEach((zona: Zona) => {
+          zona.mesas.forEach((mesa: Mesa) => {
+            estados[mesa.estado as keyof typeof estados]++;
+          });
+        });
+      });
+
+      setEstadisticas({
+        totalMesas,
+        mesasDisponibles: estados.disponible,
+        mesasOcupadas: estados.ocupada,
+        mesasReservadas: estados.reservada,
+        mesasLimpieza: estados.limpieza,
+        mesasMantenimiento: estados.mantenimiento,
+        mesasCerradas: estados.cerrada,
+        ordenesActivas: response.data.reduce((total: number, piso: Piso) =>
+          total + piso.zonas.reduce((zonaTotal: number, zona: Zona) =>
+            zonaTotal + zona.mesas.filter((mesa: Mesa) => mesa.orden_activa).length, 0
+          ), 0
+        ),
+        tiempoPromedioEspera: 15,
+        ingresosHoy: 0,
+        clientesAtendidos: 0
+      });
+
       toast.success('✅ Datos actualizados');
     } catch (error: any) {
       toast.error(`❌ Error: ${error.message}`);

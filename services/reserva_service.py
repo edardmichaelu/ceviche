@@ -102,7 +102,17 @@ class ReservaService:
                 notas=data.get('notas'),
                 requerimientos_especiales=data.get('requerimientos_especiales')
             )
-            
+
+            # Actualizar estado de la mesa a 'reservada' si se especificó una mesa
+            if data.get('mesa_id'):
+                mesa = Mesa.query.get(data['mesa_id'])
+                if mesa:
+                    mesa.estado = 'reservada'
+                    db.session.add(mesa)
+
+            # Actualizar estado de la zona si es necesario (opcional)
+            # Podríamos marcar la zona como parcialmente ocupada
+
             db.session.add(reserva)
             db.session.commit()
             
@@ -180,11 +190,30 @@ class ReservaService:
             if 'mesa_id' in data:
                 print(f"🔍 Actualizando mesa_id: {reserva.mesa_id} -> {data['mesa_id']}")
                 reserva.mesa_id = data['mesa_id']
+
+                # Actualizar estado de mesas
+                if reserva.mesa_id:
+                    # Liberar mesa anterior si existía
+                    if reserva.mesa:
+                        reserva.mesa.estado = 'disponible'
+                        db.session.add(reserva.mesa)
+
+                    # Reservar nueva mesa
+                    nueva_mesa = Mesa.query.get(data['mesa_id'])
+                    if nueva_mesa:
+                        nueva_mesa.estado = 'reservada'
+                        db.session.add(nueva_mesa)
+                else:
+                    # Si se quita la mesa, liberar la mesa actual
+                    if reserva.mesa:
+                        reserva.mesa.estado = 'disponible'
+                        db.session.add(reserva.mesa)
+
             if 'notas' in data:
                 reserva.notas = data['notas']
             if 'requerimientos_especiales' in data:
                 reserva.requerimientos_especiales = data['requerimientos_especiales']
-            
+
             reserva.actualizado_en = datetime.utcnow()
             db.session.commit()
             
@@ -216,7 +245,12 @@ class ReservaService:
             reserva = Reserva.query.get(reserva_id)
             if not reserva:
                 return False, {"error": "Reserva no encontrada"}
-            
+
+            # Liberar la mesa si estaba reservada
+            if reserva.mesa:
+                reserva.mesa.estado = 'disponible'
+                db.session.add(reserva.mesa)
+
             # Eliminar permanentemente de la base de datos
             db.session.delete(reserva)
             db.session.commit()
@@ -375,7 +409,12 @@ class ReservaService:
             reserva = Reserva.query.get(reserva_id)
             if not reserva:
                 return False, {"error": "Reserva no encontrada"}
-            
+
+            # Liberar la mesa si estaba reservada
+            if reserva.mesa:
+                reserva.mesa.estado = 'disponible'
+                db.session.add(reserva.mesa)
+
             reserva.estado = 'cancelada'
             if motivo:
                 reserva.notas = f"{reserva.notas or ''}\nCancelada: {motivo}".strip()

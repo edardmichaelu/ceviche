@@ -52,13 +52,14 @@ def get_restaurant_layout_realtime():
         error_resp, status_code = ErrorHandler.create_error_response(error_dict, 500)
         return jsonify(error_resp), status_code
 
-# --- Rutas Públicas para Desarrollo ---
+# --- Rutas Públicas para Desarrollo (SIN autenticación) ---
 
 @mesero_bp.route('/public/layout', methods=['GET'])
 def get_restaurant_layout_public():
     """Obtiene la estructura completa del restaurante (ruta pública para desarrollo)."""
     try:
-        layout = MeseroService.get_layout()
+        # Crear layout público sin datos sensibles
+        layout = MeseroService.get_layout_public()
         return jsonify({
             'data': layout,
             'success': True,
@@ -73,7 +74,8 @@ def get_restaurant_layout_public():
 def get_restaurant_layout_realtime_public():
     """Obtiene la estructura del restaurante con datos en tiempo real (ruta pública para desarrollo)."""
     try:
-        layout = MeseroService.get_layout_with_realtime_data()
+        # Crear layout público con datos en tiempo real
+        layout = MeseroService.get_layout_realtime_public()
         return jsonify({
             'data': layout,
             'success': True,
@@ -170,7 +172,22 @@ def get_estados_resumen():
         error_resp, status_code = ErrorHandler.create_error_response(error_dict, 500)
         return jsonify(error_resp), status_code
 
-@mesero_bp.route('/estadisticas/zonas', methods=['GET'])
+@mesero_bp.route('/public/estadisticas/estados', methods=['GET'])
+def get_estados_resumen_public():
+    """Obtiene resumen de estados de todas las mesas (ruta pública para desarrollo)."""
+    try:
+        resumen = MeseroService.get_mesas_estado_resumen()
+        return jsonify({
+            'data': resumen,
+            'success': True,
+            'message': 'Resumen de estados obtenido exitosamente'
+        }), 200
+    except Exception as e:
+        error_dict = ErrorHandler.handle_service_error(e, 'obtener resumen de estados de', 'mesas')
+        error_resp, status_code = ErrorHandler.create_error_response(error_dict, 500)
+        return jsonify(error_resp), status_code
+
+@mesero_bp.route('/estadisticas/estados', methods=['GET'])
 @mesero_or_admin_required
 def get_zonas_resumen():
     """Obtiene mesas agrupadas por zona con estadísticas."""
