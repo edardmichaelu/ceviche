@@ -45,6 +45,8 @@ class Reserva(db.Model):
             'requerimientos_especiales': self.requerimientos_especiales,
             'zona_id': self.zona_id,
             'mesa_id': self.mesa_id,
+            'zona_nombre': self.zona.nombre if self.zona else None,
+            'mesa_numero': self.mesa.numero if self.mesa else None,
             'usuario_id': self.usuario_id,
             'creado_en': self.creado_en.isoformat() if self.creado_en else None,
             'actualizado_en': self.actualizado_en.isoformat() if self.actualizado_en else None

@@ -913,7 +913,7 @@ const ReservasPage: React.FC = () => {
                   }}
                   reserva={{
                     ...reservaToView,
-                    mesa_numero: reservaToView?.mesa_numero ? Number(reservaToView.mesa_numero) : undefined
+                    mesa_numero: reservaToView?.mesa_numero || null
                   }}
                 />
               </div>

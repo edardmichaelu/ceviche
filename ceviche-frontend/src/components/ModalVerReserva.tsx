@@ -16,8 +16,8 @@ interface ModalVerReservaProps {
     numero_personas: number;
     estado: string;
     tipo_reserva: string;
-    zona_nombre?: string;
-    mesa_numero?: number;
+    zona_nombre?: string | null;
+    mesa_numero?: string | null;
     notas?: string;
     requerimientos_especiales?: string;
     creado_en?: string;
@@ -187,7 +187,9 @@ export function ModalVerReserva({ isOpen, onClose, reserva }: ModalVerReservaPro
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <BuildingOffice2Icon className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-900 dark:text-white font-medium">{reserva.zona_nombre || 'Sin zona asignada'}</span>
+                        <span className="text-gray-900 dark:text-white font-medium">
+                          {reserva.zona_nombre || 'Sin zona asignada'}
+                        </span>
                       </div>
                       {reserva.mesa_numero && (
                         <div className="flex items-center gap-3">
