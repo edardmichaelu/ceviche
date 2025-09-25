@@ -157,15 +157,33 @@ def completar_bloqueo(bloqueo_id):
     """Completar un bloqueo"""
     try:
         current_user_id = get_jwt_identity()
-        
+
         success, error = BloqueoService.completar_bloqueo(bloqueo_id, current_user_id)
         if error:
             return jsonify(error), 400
-        
+
         return jsonify({
             'message': 'Bloqueo completado exitosamente'
         }), 200
-        
+
+    except Exception as e:
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
+
+@bloqueo_bp.route('/<int:bloqueo_id>/cancelar', methods=['POST'])
+@jwt_required()
+def cancelar_bloqueo(bloqueo_id):
+    """Cancelar un bloqueo (libera las mesas)"""
+    try:
+        current_user_id = get_jwt_identity()
+
+        success, error = BloqueoService.cancelar_bloqueo(bloqueo_id, current_user_id)
+        if error:
+            return jsonify(error), 400
+
+        return jsonify({
+            'message': 'Bloqueo cancelado exitosamente'
+        }), 200
+
     except Exception as e:
         return jsonify({'error': f'Error interno: {str(e)}'}), 500
 

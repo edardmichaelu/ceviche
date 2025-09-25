@@ -79,11 +79,30 @@ def delete_bloqueo_public(bloqueo_id):
             if "no encontrado" in error.get('error', '').lower():
                 return jsonify(error), 404
             return jsonify(error), 400
-        
+
         return jsonify({
             'message': 'Bloqueo eliminado exitosamente',
             'success': True
         }), 200
-        
+
+    except Exception as e:
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
+
+@bloqueo_public_bp.route('/public/<int:bloqueo_id>/cancelar', methods=['POST'])
+def cancelar_bloqueo_public(bloqueo_id):
+    """Cancelar un bloqueo (ruta pública)"""
+    try:
+        success, error = BloqueoService.cancelar_bloqueo(bloqueo_id)
+        if error:
+            # Si el bloqueo no se encuentra, devolver 404
+            if "no encontrado" in error.get('error', '').lower():
+                return jsonify(error), 404
+            return jsonify(error), 400
+
+        return jsonify({
+            'message': 'Bloqueo cancelado exitosamente',
+            'success': True
+        }), 200
+
     except Exception as e:
         return jsonify({'error': f'Error interno: {str(e)}'}), 500

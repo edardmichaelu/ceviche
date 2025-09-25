@@ -141,9 +141,9 @@ export function CajaPage() {
     }
 
     return (
-        <div className="h-full w-full grid grid-cols-1 xl:grid-cols-4 gap-3 overflow-hidden p-3 sm:p-4">
+        <div className="min-h-screen w-full grid grid-cols-1 xl:grid-cols-4 gap-3 p-3 sm:p-4 overflow-y-auto">
             {/* Columna de Órdenes Pendientes */}
-            <section className="xl:col-span-1 bg-white dark:bg-slate-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col">
+            <section className="xl:col-span-1 bg-white dark:bg-slate-800 rounded-lg shadow-md p-3 sm:p-4 flex flex-col min-h-0">
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
                     <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-300">Órdenes para Pagar</h2>
                     <button
@@ -272,7 +272,7 @@ export function CajaPage() {
                                 <span className="text-2xl sm:text-3xl font-bold text-blue-500">S/ {selectedOrden.monto_total.toFixed(2)}</span>
                             </div>
                         </div>
-                        <div className="lg:col-span-3 flex flex-col bg-slate-50 dark:bg-slate-700/50 p-3 sm:p-4 lg:p-6 rounded-lg min-h-0">
+                        <div className="lg:col-span-3 flex flex-col bg-slate-50 dark:bg-slate-700/50 p-3 sm:p-4 lg:p-6 rounded-lg min-h-0 overflow-y-auto">
                             <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-slate-700 dark:text-slate-300">Método de Pago</h3>
                             <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
                                 <PaymentMethodButton

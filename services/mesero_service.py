@@ -100,6 +100,21 @@ class MeseroService:
                         )
                     ).first()
 
+                    # Obtener bloqueos que afecten a esta mesa/zona/piso
+                    # ✅ Buscar TODOS los bloqueos (no solo activos) que afecten a esta ubicación
+                    from models.bloqueo import Bloqueo
+                    bloqueos_relevantes = Bloqueo.query.filter(
+                        Bloqueo.estado.in_(['programado', 'activo'])  # ✅ Incluir programados y activos
+                    ).all()
+
+                    bloqueo_activo = None
+                    for bloqueo in bloqueos_relevantes:
+                        if (bloqueo.mesa_id == mesa.id or
+                            bloqueo.zona_id == zona.id or
+                            bloqueo.piso_id == piso.id):
+                            bloqueo_activo = bloqueo
+                            break
+
                     # Calcular tiempo de espera si hay orden activa
                     tiempo_espera = 0
                     total_items = 0
@@ -130,6 +145,13 @@ class MeseroService:
                             "cliente_nombre": reserva_activa.cliente_nombre if reserva_activa else None,
                             "hora_reserva": reserva_activa.hora_reserva.isoformat() if reserva_activa and reserva_activa.hora_reserva else None
                         } if reserva_activa else None,
+                        "bloqueo_activo": {
+                            "id": bloqueo_activo.id if bloqueo_activo else None,
+                            "titulo": bloqueo_activo.titulo if bloqueo_activo else None,
+                            "tipo": bloqueo_activo.tipo if bloqueo_activo else None,
+                            "estado": bloqueo_activo.estado if bloqueo_activo else None,
+                            "descripcion": bloqueo_activo.descripcion if bloqueo_activo else None
+                        } if bloqueo_activo else None,
                         "ultima_actividad": orden_activa.actualizado_en.isoformat() if orden_activa and orden_activa.actualizado_en else None
                     }
                     zona_data["mesas"].append(mesa_data)

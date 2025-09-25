@@ -69,7 +69,7 @@ class BloqueoService:
                 titulo=data['titulo'],
                 descripcion=data.get('descripcion'),
                 tipo=data['tipo'],
-                estado='programado',
+                estado='programado',  # ✅ Por defecto 'programado'
                 fecha_inicio=fecha_inicio_date,
                 hora_inicio=hora_inicio_time,
                 fecha_fin=fecha_fin_date,
@@ -79,8 +79,32 @@ class BloqueoService:
                 piso_id=data.get('piso_id'),
                 usuario_id=data['usuario_id']
             )
-            
+
             db.session.add(bloqueo)
+
+            # ✅ ACTUALIZAR ESTADO DE MESAS/ZONAS/PISOS INMEDIATAMENTE
+            # Las mesas se marcan como 'fuera_servicio' cuando se crea el bloqueo
+            # independientemente del estado del bloqueo (programado/activo)
+            if bloqueo.mesa_id:
+                mesa = Mesa.query.get(bloqueo.mesa_id)
+                if mesa:
+                    mesa.estado = 'fuera_servicio'  # Mesa bloqueada
+                    db.session.add(mesa)
+            elif bloqueo.zona_id:
+                # Si es una zona entera, marcar todas las mesas como fuera de servicio
+                mesas_zona = Mesa.query.filter_by(zona_id=bloqueo.zona_id).all()
+                for mesa in mesas_zona:
+                    mesa.estado = 'fuera_servicio'
+                    db.session.add(mesa)
+            elif bloqueo.piso_id:
+                # Si es un piso entero, marcar todas las mesas como fuera de servicio
+                zonas_piso = Zona.query.filter_by(piso_id=bloqueo.piso_id).all()
+                for zona in zonas_piso:
+                    mesas_zona = Mesa.query.filter_by(zona_id=zona.id).all()
+                    for mesa in mesas_zona:
+                        mesa.estado = 'fuera_servicio'
+                        db.session.add(mesa)
+
             db.session.commit()
             
             # Registrar en auditoría
@@ -200,7 +224,7 @@ class BloqueoService:
             bloqueo.mesa_id = None
             bloqueo.zona_id = None
             bloqueo.piso_id = None
-            
+
             # Luego asignar solo el campo que tiene valor
             if 'mesa_id' in data and data['mesa_id'] is not None:
                 bloqueo.mesa_id = data['mesa_id']
@@ -208,6 +232,9 @@ class BloqueoService:
                 bloqueo.zona_id = data['zona_id']
             if 'piso_id' in data and data['piso_id'] is not None:
                 bloqueo.piso_id = data['piso_id']
+
+            # Actualizar estado de mesas/zonas/pisos después de cambiar ubicación
+            BloqueoService._actualizar_estado_ubicaciones(bloqueo)
             if 'notas' in data:
                 bloqueo.notas = data['notas']
             if 'motivo' in data:
@@ -239,6 +266,14 @@ class BloqueoService:
             if not bloqueo:
                 return False, {"error": "Bloqueo no encontrado"}
             
+            # Liberar ubicaciones antes de eliminar
+            if bloqueo.mesa_id:
+                BloqueoService._liberar_mesa(bloqueo.mesa_id)
+            elif bloqueo.zona_id:
+                BloqueoService._liberar_zona(bloqueo.zona_id)
+            elif bloqueo.piso_id:
+                BloqueoService._liberar_piso(bloqueo.piso_id)
+
             # Eliminar permanentemente
             db.session.delete(bloqueo)
             db.session.commit()
@@ -268,6 +303,10 @@ class BloqueoService:
             
             bloqueo.estado = 'activo'
             bloqueo.actualizado_en = datetime.utcnow()
+
+            # ✅ Las mesas ya están marcadas como 'fuera_servicio' desde la creación
+            # No necesitamos hacer nada adicional al activar
+
             db.session.commit()
             
             # Registrar en auditoría
@@ -295,6 +334,16 @@ class BloqueoService:
             
             bloqueo.estado = 'completado'
             bloqueo.actualizado_en = datetime.utcnow()
+
+            # ✅ Liberar ubicaciones cuando se completa el bloqueo
+            # Solo si el bloqueo estaba activo (afectando las mesas)
+            if bloqueo.mesa_id:
+                BloqueoService._liberar_mesa(bloqueo.mesa_id)
+            elif bloqueo.zona_id:
+                BloqueoService._liberar_zona(bloqueo.zona_id)
+            elif bloqueo.piso_id:
+                BloqueoService._liberar_piso(bloqueo.piso_id)
+
             db.session.commit()
             
             # Registrar en auditoría
@@ -311,9 +360,107 @@ class BloqueoService:
         except Exception as e:
             db.session.rollback()
             return False, {"error": f"Error completando bloqueo: {str(e)}"}
-    
+
     @staticmethod
-    def check_conflictos_reservas(mesa_id: Optional[int], zona_id: Optional[int], 
+    def cancelar_bloqueo(bloqueo_id: int, usuario_id: Optional[int] = None) -> Tuple[bool, Optional[Dict[str, str]]]:
+        """Cancelar un bloqueo (libera las mesas)"""
+        try:
+            bloqueo = Bloqueo.query.get(bloqueo_id)
+            if not bloqueo:
+                return False, {"error": "Bloqueo no encontrado"}
+
+            # ✅ Liberar ubicaciones cuando se cancela el bloqueo
+            if bloqueo.mesa_id:
+                BloqueoService._liberar_mesa(bloqueo.mesa_id)
+            elif bloqueo.zona_id:
+                BloqueoService._liberar_zona(bloqueo.zona_id)
+            elif bloqueo.piso_id:
+                BloqueoService._liberar_piso(bloqueo.piso_id)
+
+            bloqueo.estado = 'cancelado'
+            bloqueo.actualizado_en = datetime.utcnow()
+            db.session.commit()
+
+            # Registrar en auditoría
+            AuditService.log_event(
+                usuario_id=usuario_id,
+                accion='cancel',
+                entidad='bloqueo',
+                id_entidad=bloqueo.id,
+                valores_anteriores={'titulo': bloqueo.titulo, 'estado_anterior': 'cancelado'}
+            )
+
+            return True, None
+
+        except Exception as e:
+            db.session.rollback()
+            return False, {"error": f"Error cancelando bloqueo: {str(e)}"}
+
+    @staticmethod
+    def _actualizar_estado_ubicaciones(bloqueo: Bloqueo):
+        """Actualizar el estado de mesas/zonas/pisos según el bloqueo"""
+        try:
+            # ✅ ACTUALIZAR ESTADOS INMEDIATAMENTE cuando se crea/actualiza bloqueo
+            # Las mesas se marcan como 'fuera_servicio' inmediatamente, no solo cuando está 'activo'
+
+            if bloqueo.mesa_id:
+                BloqueoService._bloquear_mesa(bloqueo.mesa_id)
+            elif bloqueo.zona_id:
+                BloqueoService._bloquear_zona(bloqueo.zona_id)
+            elif bloqueo.piso_id:
+                BloqueoService._bloquear_piso(bloqueo.piso_id)
+
+        except Exception as e:
+            print(f"Error actualizando estados de ubicaciones: {str(e)}")
+
+    @staticmethod
+    def _liberar_mesa(mesa_id: int):
+        """Liberar una mesa específica"""
+        mesa = Mesa.query.get(mesa_id)
+        if mesa:
+            mesa.estado = 'disponible'
+            db.session.add(mesa)
+
+    @staticmethod
+    def _liberar_zona(zona_id: int):
+        """Liberar todas las mesas de una zona"""
+        mesas = Mesa.query.filter_by(zona_id=zona_id).all()
+        for mesa in mesas:
+            mesa.estado = 'disponible'
+            db.session.add(mesa)
+
+    @staticmethod
+    def _liberar_piso(piso_id: int):
+        """Liberar todas las mesas de un piso"""
+        zonas = Zona.query.filter_by(piso_id=piso_id).all()
+        for zona in zonas:
+            BloqueoService._liberar_zona(zona.id)
+
+    @staticmethod
+    def _bloquear_mesa(mesa_id: int):
+        """Bloquear una mesa específica"""
+        mesa = Mesa.query.get(mesa_id)
+        if mesa:
+            mesa.estado = 'fuera_servicio'
+            db.session.add(mesa)
+
+    @staticmethod
+    def _bloquear_zona(zona_id: int):
+        """Bloquear todas las mesas de una zona"""
+        mesas = Mesa.query.filter_by(zona_id=zona_id).all()
+        for mesa in mesas:
+            mesa.estado = 'fuera_servicio'
+            db.session.add(mesa)
+
+    @staticmethod
+    def _bloquear_piso(piso_id: int):
+        """Bloquear todas las mesas de un piso"""
+        zonas = Zona.query.filter_by(piso_id=piso_id).all()
+        for zona in zonas:
+            BloqueoService._bloquear_zona(zona.id)
+
+    @staticmethod
+    def check_conflictos_reservas(mesa_id: Optional[int], zona_id: Optional[int],
                                 fecha_inicio: datetime, fecha_fin: datetime) -> Optional[str]:
         """Verificar conflictos con reservas existentes"""
         try:

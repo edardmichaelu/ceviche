@@ -27,6 +27,13 @@ interface Mesa {
     estado: string;
     cliente_nombre?: string;
   };
+  bloqueo_activo?: {
+    id: number;
+    titulo: string;
+    tipo: string;
+    estado: string;
+    descripcion?: string;
+  };
   ultima_actividad?: string;
 }
 
@@ -93,6 +100,13 @@ export const MesaCard: React.FC<MesaCardProps> = ({
         text: 'text-gray-800',
         icon: 'text-gray-600',
         shadow: 'shadow-gray-100'
+      },
+      fuera_servicio: {
+        bg: 'bg-gradient-to-br from-red-50 to-red-100',
+        border: 'border-red-300',
+        text: 'text-red-800',
+        icon: 'text-red-600',
+        shadow: 'shadow-red-100'
       }
     };
     return styles[estado as keyof typeof styles] || styles.disponible;
@@ -105,7 +119,8 @@ export const MesaCard: React.FC<MesaCardProps> = ({
       reservada: ClockIcon,
       limpieza: ExclamationTriangleIcon,
       mantenimiento: WrenchScrewdriverIcon,
-      cerrada: XCircleIcon
+      cerrada: XCircleIcon,
+      fuera_servicio: WrenchScrewdriverIcon
     };
     return icons[estado as keyof typeof icons] || CheckCircleIcon;
   };
@@ -117,7 +132,8 @@ export const MesaCard: React.FC<MesaCardProps> = ({
       reservada: 'Reservada',
       limpieza: 'Limpieza',
       mantenimiento: 'Mantenimiento',
-      cerrada: 'Cerrada'
+      cerrada: 'Cerrada',
+      fuera_servicio: 'Fuera de Servicio'
     };
     return labels[estado as keyof typeof labels] || estado;
   };
@@ -184,6 +200,22 @@ export const MesaCard: React.FC<MesaCardProps> = ({
                   <span className="text-xs font-medium">{mesa.orden_activa.tiempo_espera} min</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Información de bloqueo si está activo */}
+          {mesa.bloqueo_activo && (
+            <div className="bg-red-50/50 rounded-lg p-3 space-y-2 border border-red-200">
+              <div className="flex items-center gap-2">
+                <WrenchScrewdriverIcon className="h-4 w-4 text-red-600" />
+                <span className="text-sm font-medium text-red-800">{mesa.bloqueo_activo.titulo}</span>
+              </div>
+              <div className="text-xs text-red-700">
+                <p>Tipo: {mesa.bloqueo_activo.tipo}</p>
+                {mesa.bloqueo_activo.descripcion && (
+                  <p className="truncate">Descripción: {mesa.bloqueo_activo.descripcion}</p>
+                )}
+              </div>
             </div>
           )}
 
