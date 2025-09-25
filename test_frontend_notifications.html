@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prueba de Notificaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Simular react-hot-toast
+        function toast(type, message, options = {}) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            toast.className = `p-4 rounded-lg shadow-lg mb-2 ${
+                type === 'error' ? 'bg-red-500' : 'bg-green-500'
+            } text-white`;
+
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                        ✕
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remover después de la duración especificada
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, options.duration || 4000);
+        }
+
+        // Simular ErrorHandler
+        class ErrorHandler {
+            static showErrorNotification(error, context = 'operación') {
+                const message = this.getFriendlyErrorMessage(error);
+                this.logError(context, error);
+                toast('error', message, {
+                    duration: 6000,
+                    style: {
+                        background: '#EF4444',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        fontWeight: '500'
+                    }
+                });
+            }
+
+            static showSuccessNotification(message) {
+                toast('success', message, {
+                    duration: 4000,
+                    style: {
+                        background: '#10B981',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        fontWeight: '500'
+                    }
+                });
+            }
+
+            static getFriendlyErrorMessage(error) {
+                if (error.code === 'INTEGRITY_ERROR') {
+                    return error.error || 'No se puede eliminar el elemento porque tiene dependencias asociadas.';
+                }
+                return error.message || 'Error inesperado.';
+            }
+
+            static logError(context, error) {
+                console.group(`🚨 Error en ${context}`);
+                console.error('Error:', error);
+                console.groupEnd();
+            }
+        }
+
+        // Pruebas
+        function testErrorNotification() {
+            const error = {
+                code: 'INTEGRITY_ERROR',
+                error: 'No se puede eliminar el producto porque tiene 1 orden(es) asociada(s)'
+            };
+            ErrorHandler.showErrorNotification(error, 'eliminar producto');
+        }
+
+        function testSuccessNotification() {
+            ErrorHandler.showSuccessNotification('Operación completada exitosamente');
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-4">Prueba de Notificaciones</h1>
+
+        <div id="toast-container" class="mb-4"></div>
+
+        <div class="space-y-4">
+            <button onclick="testErrorNotification()"
+                    class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded">
+                Probar Notificación de Error
+            </button>
+
+            <button onclick="testSuccessNotification()"
+                    class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">
+                Probar Notificación de Éxito
+            </button>
+        </div>
+
+        <div class="mt-8 p-4 bg-gray-50 rounded">
+            <h3 class="font-semibold mb-2">Instrucciones:</h3>
+            <ul class="text-sm text-gray-600 space-y-1">
+                <li>• Haz clic en los botones para probar las notificaciones</li>
+                <li>• Las notificaciones aparecerán arriba</li>
+                <li>• Las notificaciones de error duran 6 segundos</li>
+                <li>• Las notificaciones de éxito duran 4 segundos</li>
+                <li>• Se pueden cerrar manualmente con la X</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

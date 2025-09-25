@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend Imágenes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .test-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #eee;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Test Frontend de Imágenes</h1>
+
+        <div class="test-section">
+            <h3>Test 1: Imagen de prueba del backend</h3>
+            <button onclick="testBackendImage()">Cargar imagen de prueba</button>
+            <div id="backend-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: Subir imagen de prueba</h3>
+            <input type="file" id="fileInput" accept="image/*" multiple>
+            <button onclick="uploadTestImage()">Subir imagen</button>
+            <div id="upload-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 3: Verificar archivos existentes</h3>
+            <button onclick="checkExistingFiles()">Verificar archivos</button>
+            <div id="files-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 4: Probar diferentes URLs</h3>
+            <button onclick="testUrls()">Probar URLs</button>
+            <div id="urls-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 5: Grid de imágenes de prueba</h3>
+            <div class="image-grid" id="image-grid">
+                <div class="status warning">
+                    Haz clic en "Probar URLs" para cargar imágenes de prueba
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testBackendImage() {
+            const div = document.getElementById('backend-test');
+            div.innerHTML = '<div class="status warning">Cargando...</div>';
+
+            try {
+                const response = await fetch('/api/test-image');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+
+                    div.innerHTML = `
+                        <div class="status success">
+                            ✅ Imagen del backend cargada correctamente
+                        </div>
+                        <img src="${url}" alt="Test Image" style="max-width: 300px; border: 1px solid #ddd;">
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="status error">
+                            ❌ Error: ${response.status} - ${response.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                div.innerHTML = `
+                    <div class="status error">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function uploadTestImage() {
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) {
+                alert('Selecciona al menos una imagen');
+                return;
+            }
+
+            const div = document.getElementById('upload-test');
+            div.innerHTML = '<div class="status warning">Subiendo...</div>';
+
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('imagenes', file);
+            }
+
+            try {
+                const response = await fetch('/api/producto/test-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                div.innerHTML = `
+                    <div class="status ${result.success ? 'success' : 'error'}">
+                        ${result.success ? '✅' : '❌'} ${result.message}
+                    </div>
+                `;
+
+                if (result.success) {
+                    checkExistingFiles();
+                }
+            } catch (error) {
+                div.innerHTML = `
+                    <div class="status error">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function checkExistingFiles() {
+            const div = document.getElementById('files-test');
+            div.innerHTML = '<div class="status warning">Verificando...</div>';
+
+            try {
+                const response = await fetch('/uploads/productos/');
+                if (response.ok) {
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const links = doc.querySelectorAll('a');
+                    const files = Array.from(links)
+                        .map(a => a.textContent)
+                        .filter(text => text && !text.includes('..') && text !== 'Parent Directory' &&
+                               (text.endsWith('.jpg') || text.endsWith('.jpeg') || text.endsWith('.png') || text.endsWith('.gif')));
+
+                    div.innerHTML = `
+                        <div class="status success">
+                            ✅ ${files.length} imágenes encontradas
+                        </div>
+                        <div>${files.join(', ')}</div>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="status error">
+                            ❌ Error: ${response.status}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                div.innerHTML = `
+                    <div class="status error">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testUrls() {
+            const div = document.getElementById('urls-test');
+            const grid = document.getElementById('image-grid');
+
+            div.innerHTML = '<div class="status warning">Probando URLs...</div>';
+            grid.innerHTML = '<div class="status warning">Cargando imágenes...</div>';
+
+            const testUrls = [
+                '/api/test-image',
+                '/uploads/productos/test.png',
+                '/uploads/productos/test.jpg'
+            ];
+
+            const results = [];
+
+            for (const url of testUrls) {
+                try {
+                    const response = await fetch(url, { method: 'HEAD' });
+                    results.push({
+                        url,
+                        status: response.status,
+                        success: response.ok
+                    });
+                } catch (error) {
+                    results.push({
+                        url,
+                        status: 'error',
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            div.innerHTML = results.map(result => `
+                <div class="status ${result.success ? 'success' : 'error'}">
+                    ${result.success ? '✅' : '❌'} ${result.url}: ${result.status}
+                </div>
+            `).join('');
+
+            // Mostrar imágenes que funcionen
+            const workingImages = results.filter(r => r.success);
+            if (workingImages.length > 0) {
+                grid.innerHTML = workingImages.map(result => `
+                    <div>
+                        <img src="${result.url}"
+                             alt="Test"
+                             class="test-image"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display: none; color: red; font-size: 12px; text-align: center;">
+                            ❌ Error cargando ${result.url}
+                        </div>
+                        <p style="font-size: 12px; text-align: center; margin: 5px 0;">${result.url}</p>
+                    </div>
+                `).join('');
+            } else {
+                grid.innerHTML = '<div class="status error">❌ No se pudo cargar ninguna imagen</div>';
+            }
+        }
+    </script>
+</body>
+</html>

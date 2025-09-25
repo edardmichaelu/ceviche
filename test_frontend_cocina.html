@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Frontend Cocina</title>
+</head>
+<body>
+    <h1>🔧 Prueba Frontend Cocina</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testCocinaEndpoint() {
+            const results = document.getElementById('results');
+
+            // 1. Hacer login
+            results.innerHTML += '<h2>1️⃣ Probando Login...</h2>';
+
+            try {
+                const loginResponse = await fetch('http://localhost:5000/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        identifier: 'cocina1',
+                        password: 'hashed_password_here'
+                    })
+                });
+
+                const loginData = await loginResponse.json();
+                results.innerHTML += `<p>Status: ${loginResponse.status}</p>`;
+                results.innerHTML += `<p>Response: ${JSON.stringify(loginData, null, 2)}</p>`;
+
+                if (loginResponse.ok && loginData.access_token) {
+                    const token = loginData.access_token;
+                    results.innerHTML += '<h2>2️⃣ Probando Endpoint /api/cocina/ordenes...</h2>';
+
+                    // 2. Probar endpoint de órdenes con token
+                    const ordenesResponse = await fetch('http://localhost:5000/api/cocina/ordenes', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    const ordenesData = await ordenesResponse.json();
+                    results.innerHTML += `<p>Status: ${ordenesResponse.status}</p>`;
+                    results.innerHTML += `<p>Response: ${JSON.stringify(ordenesData, null, 2)}</p>`;
+
+                    if (ordenesResponse.ok) {
+                        results.innerHTML += '<h2 style="color: green;">✅ ¡TODO FUNCIONA CORRECTAMENTE!</h2>';
+                        results.innerHTML += `<p>Total de órdenes: ${ordenesData.data.total_ordenes}</p>`;
+                    } else {
+                        results.innerHTML += '<h2 style="color: red;">❌ Error en endpoint de órdenes</h2>';
+                    }
+                } else {
+                    results.innerHTML += '<h2 style="color: red;">❌ Error en login</h2>';
+                }
+            } catch (error) {
+                results.innerHTML += `<h2 style="color: red;">❌ Error de conexión: ${error.message}</h2>`;
+            }
+        }
+
+        // Ejecutar la prueba cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', testCocinaEndpoint);
+    </script>
+</body>
+</html>
