@@ -175,14 +175,14 @@ const ReservasPage: React.FC = () => {
     try {
       const data = {
         ...formData,
-        zona_id: formData.zona_id ? parseInt(formData.zona_id) : null,
-        mesa_id: formData.mesa_id ? parseInt(formData.mesa_id) : null,
+        zona_id: formData.zona_id ? parseInt(formData.zona_id) : undefined,
+        mesa_id: formData.mesa_id ? parseInt(formData.mesa_id) : undefined,
         duracion_estimada: parseInt(formData.duracion_estimada?.toString() || '120'),
         numero_personas: parseInt(formData.numero_personas?.toString() || '1')
       };
 
-      // Validar datos usando el sistema robusto
-      const validation = ValidationService.validateReserva(formData);
+      // Validar datos usando el sistema robusto con datos procesados
+      const validation = ValidationService.validateReserva(data);
       if (!validation.isValid) {
         const errorMessages = ValidationService.displayValidationErrors(validation.errors);
         errorMessages.forEach(message => toast.error(`❌ ${message}`));
@@ -193,7 +193,7 @@ const ReservasPage: React.FC = () => {
       if (editingReserva) {
         response = await apiClient.put(`/api/reservas/${editingReserva.id}`, data);
         const apiResponse = ErrorHandler.processApiResponse(response);
-        
+
         if (ErrorHandler.isSuccessResponse(apiResponse)) {
           toast.success('Reserva actualizada correctamente');
           setShowModal(false);
@@ -789,7 +789,7 @@ const ReservasPage: React.FC = () => {
                         }}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
-                        <option value="">Seleccionar zona</option>
+                        <option value="">Seleccionar zona *</option>
                         {zonas.map(zona => (
                           <option key={zona.id} value={zona.id}>{zona.nombre}</option>
                         ))}
@@ -798,7 +798,7 @@ const ReservasPage: React.FC = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Mesa (Opcional)
+                        Mesa Específica (Opcional)
                       </label>
                       <select
                         value={formData.mesa_id}

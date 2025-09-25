@@ -79,15 +79,17 @@ export class ValidationService {
     if (!formData.numero_personas || formData.numero_personas <= 0) {
       errors.numero_personas = 'El número de personas debe ser mayor a 0.';
     }
-    if (!formData.zona_id) {
-      errors.zona_id = 'Debe seleccionar una zona.';
+
+    // Validar que al menos una ubicación esté seleccionada (zona_id o mesa_id)
+    if (!formData.zona_id && !formData.mesa_id) {
+      errors.ubicacion = 'Debe seleccionar una zona o una mesa específica.';
     }
 
     // Validar fechas
     if (formData.fecha_reserva) {
       const fechaReserva = new Date(formData.fecha_reserva);
       const ahora = new Date();
-      
+
       if (fechaReserva.toString() === 'Invalid Date') {
         errors.fecha_reserva = 'Formato de fecha inválido.';
       } else if (fechaReserva < ahora) {

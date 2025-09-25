@@ -14,10 +14,18 @@ class ReservaService:
         """Crear una nueva reserva"""
         try:
             # Validar datos requeridos
-            required_fields = ['cliente_nombre', 'cliente_telefono', 'fecha_reserva', 'hora_reserva', 'numero_personas', 'zona_id']
+            required_fields = ['cliente_nombre', 'cliente_telefono', 'fecha_reserva', 'hora_reserva', 'numero_personas']
             for field in required_fields:
                 if field not in data or not data[field]:
                     return None, {"error": f"El campo {field} es requerido"}
+
+            # Validar que al menos una ubicación esté seleccionada (zona_id o mesa_id)
+            # Nota: zona_id y mesa_id pueden ser None/undefined si no se seleccionan
+            zona_id = data.get('zona_id')
+            mesa_id = data.get('mesa_id')
+
+            if (zona_id is None or zona_id == '') and (mesa_id is None or mesa_id == ''):
+                return None, {"error": "Debe seleccionar una zona o una mesa específica"}
             
             # Validar fecha y hora
             fecha_reserva = data['fecha_reserva']
