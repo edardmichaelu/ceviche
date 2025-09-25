@@ -37,7 +37,8 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-0 text-left align-middle shadow-xl transition-all max-h-[90vh] flex flex-col">
+                <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 p-6 border-b border-slate-200 dark:border-slate-700">
                 <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
                   {title}
                 </Dialog.Title>
@@ -48,7 +49,8 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                 >
                   <XMarkIcon className="h-6 w-6" />
                 </button>
-                <div className="mt-4">
+                </div>
+                <div className="p-6 overflow-y-auto">
                   {children}
                 </div>
               </Dialog.Panel>

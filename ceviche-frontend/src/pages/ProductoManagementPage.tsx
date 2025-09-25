@@ -18,7 +18,9 @@ import {
   StarIcon,
   PhotoIcon,
   CakeIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ClockIcon,
+  FireIcon
 } from '@heroicons/react/24/outline';
 
 interface ProductoImagen {
@@ -218,8 +220,7 @@ const ProductoManagementPage: React.FC = () => {
       }
     } catch (error: any) {
       ErrorHandler.logError('cargar productos', error);
-      const errorMessage = ErrorHandler.showErrorNotification(error, 'cargar productos');
-      toast.error(errorMessage);
+      ErrorHandler.showErrorNotification(error, 'cargar productos');
     } finally {
       setLoading(false);
     }
@@ -474,8 +475,7 @@ const ProductoManagementPage: React.FC = () => {
       }
     } catch (error: any) {
       ErrorHandler.logError('guardar producto', error, { formData, editingProducto });
-      const errorMessage = ErrorHandler.showErrorNotification(error, 'guardar producto');
-      toast.error(errorMessage);
+      ErrorHandler.showErrorNotification(error, 'guardar producto');
     }
   };
 
@@ -527,8 +527,7 @@ const ProductoManagementPage: React.FC = () => {
       }
     } catch (error: any) {
       ErrorHandler.logError('toggle favorito', error, { producto });
-      const errorMessage = ErrorHandler.showErrorNotification(error, 'toggle favorito');
-      toast.error(errorMessage);
+      ErrorHandler.showErrorNotification(error, 'toggle favorito');
     }
   };
 
@@ -858,14 +857,41 @@ const ProductoManagementPage: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
               className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
             >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Detalles del Producto</h2>
-                <button
-                  onClick={() => setShowViewModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
+              <div className="mb-4 rounded-2xl overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 opacity-95"></div>
+                <div className="relative p-6 text-white">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-white/80 mb-1">Producto</div>
+                      <h2 className="text-2xl font-bold drop-shadow-sm">{productoToView.nombre}</h2>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-white/20 backdrop-blur">
+                          <TagIcon className="h-4 w-4" />{productoToView.categoria?.nombre || 'Sin categoría'}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-white/20 backdrop-blur">
+                          {productoToView.es_favorito ? '⭐ Favorito' : 'Producto'}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-white/20 backdrop-blur`}>
+                          {productoToView.tipo_estacion}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-extrabold tracking-tight drop-shadow">S/ {Number(productoToView.precio).toFixed(2)}</div>
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${productoToView.disponible ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-800'}`}>
+                          {productoToView.disponible ? 'Disponible' : 'No disponible'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowViewModal(false)}
+                    className="absolute top-3 right-3 p-1 rounded-full text-white/80 hover:bg-white/20"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
               </div>
 
               {/* Contenido principal */}
@@ -879,71 +905,101 @@ const ProductoManagementPage: React.FC = () => {
                     autoPlay={false}
                     showControls={true}
                   />
+                  {productoToView.descripcion && (
+                    <div className="mt-4 hidden lg:block bg-gradient-to-br from-slate-50 to-white dark:from-slate-700/30 dark:to-slate-700/10 border border-slate-200 dark:border-slate-600 rounded-xl p-4">
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 text-sm mb-2">
+                        <TagIcon className="h-4 w-4" />
+                        Descripción
+                      </div>
+                      <div className="text-slate-800 dark:text-slate-100 whitespace-pre-wrap text-sm leading-relaxed">
+                        {productoToView.descripcion}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Datos del producto */}
                 <div className="lg:w-3/5 flex-1 overflow-y-auto">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Nombre</div>
-                  <div className="text-gray-900 dark:text-white font-medium">{productoToView.nombre}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Precio</div>
-                  <div className="text-blue-600 dark:text-blue-400 font-bold">S/ {Number(productoToView.precio).toFixed(2)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Categoría</div>
-                  <div className="text-gray-900 dark:text-white">{productoToView.categoria?.nombre || 'Sin categoría'}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Estación</div>
-                  <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${getEstacionColor(productoToView.tipo_estacion)}`}>{productoToView.tipo_estacion}</span>
-                </div>
-                {typeof productoToView.tiempo_preparacion !== 'undefined' && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Tiempo preparación</div>
-                    <div className="text-gray-900 dark:text-white">{productoToView.tiempo_preparacion} min</div>
-                  </div>
-                )}
-                {productoToView.nivel_picante && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Picante</div>
-                    <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${getPicanteColor(productoToView.nivel_picante)}`}>{productoToView.nivel_picante}</span>
-                  </div>
-                )}
-                <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Estado</div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${productoToView.disponible ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'}`}>
-                    {productoToView.disponible ? '✅ Disponible' : '❌ No disponible'}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Destacado</div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${productoToView.es_favorito ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
-                    {productoToView.es_favorito ? '⭐ Sí' : '❌ No'}
-                  </span>
-                </div>
-                {typeof productoToView.stock !== 'undefined' && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Stock</div>
-                    <div className="text-gray-900 dark:text-white">{productoToView.stock}</div>
-                  </div>
-                )}
-                {typeof productoToView.alerta_stock !== 'undefined' && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Alerta stock</div>
-                    <div className="text-gray-900 dark:text-white">{productoToView.alerta_stock}</div>
-                  </div>
-                )}
+                  <div className="space-y-5">
+                    {/* Tarjetas de datos rápidas */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="rounded-xl p-3 bg-white dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+                          <TagIcon className="h-4 w-4" />
+                          Categoría
+                        </div>
+                        <div className="text-slate-900 dark:text-white text-sm mt-1">{productoToView.categoria?.nombre || 'Sin categoría'}</div>
+                      </div>
+                      <div className="rounded-xl p-3 bg-white dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">Estación</div>
+                        <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${getEstacionColor(productoToView.tipo_estacion)}`}>{productoToView.tipo_estacion}</span>
+                      </div>
+                      {typeof productoToView.tiempo_preparacion !== 'undefined' && (
+                        <div className="rounded-xl p-3 bg-white dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+                            <ClockIcon className="h-4 w-4" />Tiempo
+                          </div>
+                          <div className="text-slate-900 dark:text-white text-sm mt-1">{productoToView.tiempo_preparacion} min</div>
+                        </div>
+                      )}
+                      {productoToView.nivel_picante && (
+                        <div className="rounded-xl p-3 bg-white dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+                            <FireIcon className="h-4 w-4" />Picante
+                          </div>
+                          <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${getPicanteColor(productoToView.nivel_picante)}`}>{productoToView.nivel_picante}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Estado y destacado */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="rounded-xl p-3 bg-white dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+                        <div className="text-xs text-slate-500 dark:text-slate-300">Estado</div>
+                        <span className={`inline-flex items-center gap-1 mt-1 px-2 py-1 rounded-full text-xs font-medium ${productoToView.disponible ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'}`}>
+                          {productoToView.disponible ? '✅ Disponible' : '❌ No disponible'}
+                        </span>
+                      </div>
+                      <div className="rounded-xl p-3 bg-white dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+                        <div className="text-xs text-slate-500 dark:text-slate-300">Destacado</div>
+                        <span className={`inline-flex items-center gap-1 mt-1 px-2 py-1 rounded-full text-xs font-medium ${productoToView.es_favorito ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                          {productoToView.es_favorito ? '⭐ Sí' : '❌ No'}
+                        </span>
+                      </div>
+                    </div>
+                 {(typeof productoToView.stock !== 'undefined' || typeof productoToView.alerta_stock !== 'undefined') && (
+                   <div>
+                     <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Inventario</div>
+                     <div className="grid grid-cols-2 gap-3">
+                       {typeof productoToView.stock !== 'undefined' && (
+                         <div className="flex items-center gap-3 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600">
+                           <CubeIcon className="h-4 w-4 text-slate-500 dark:text-slate-300" />
+                           <div>
+                             <div className="text-xs text-slate-500 dark:text-slate-300">Stock</div>
+                             <div className="text-sm font-semibold text-slate-900 dark:text-white">{productoToView.stock}</div>
+                           </div>
+                         </div>
+                       )}
+                       {typeof productoToView.alerta_stock !== 'undefined' && (
+                         <div className="flex items-center gap-3 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                           <ExclamationTriangleIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                           <div>
+                             <div className="text-xs text-yellow-700 dark:text-yellow-300">Alerta</div>
+                             <div className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">{productoToView.alerta_stock}</div>
+                           </div>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 )}
 
                 {/* Descripción */}
-                {productoToView.descripcion && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
-                    <div className="text-gray-900 dark:text-gray-200 whitespace-pre-wrap">{productoToView.descripcion}</div>
-                  </div>
-                )}
+                 {productoToView.descripcion && (
+                   <div className="lg:hidden">
+                     <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
+                     <div className="text-gray-900 dark:text-gray-200 whitespace-pre-wrap">{productoToView.descripcion}</div>
+                   </div>
+                 )}
 
                 {/* Ingredientes Asociados */}
                 <div>
@@ -1518,7 +1574,7 @@ const ProductoManagementPage: React.FC = () => {
                         />
                         <button
                           type="button"
-                          onClick={handleAddAsociacion}
+                          onClick={() => handleAddAsociacion()}
                           disabled={savingAssoc}
                           className="w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
                         >
@@ -1607,7 +1663,7 @@ const ProductoManagementPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => {
-                          toast.info('Redirigiendo a gestión de Producto-Ingrediente...');
+                          toast('Redirigiendo a gestión de Producto-Ingrediente...');
                           setShowGestionIngredientesModal(false);
                           // Aquí podrías navegar a la página de gestión de Producto-Ingrediente
                         }}
