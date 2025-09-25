@@ -42,6 +42,9 @@ interface User {
   usuario: string;
   rol: string;
   estacion?: string;
+  avatar?: string | null;
+  correo?: string;
+  activo?: boolean;
 }
 
 // --- Componente Principal de la Aplicación ---
@@ -54,14 +57,16 @@ function App() {
 
   useEffect(() => {
     const userData = sessionStorage.getItem('userData');
+
     if (userData) {
       try {
         const parsedUser = JSON.parse(userData);
         if (parsedUser && typeof parsedUser === 'object') {
           setCurrentUser(parsedUser);
+        } else {
+          sessionStorage.removeItem('userData');
         }
       } catch (error) {
-        console.error('Error parsing userData:', error);
         sessionStorage.removeItem('userData');
       }
     }
@@ -74,7 +79,30 @@ function App() {
 
   const handleLoginSuccess = () => {
     const userData = sessionStorage.getItem('userData');
-    if (userData) setCurrentUser(JSON.parse(userData));
+
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUser(parsedUser);
+      } catch (error) {
+        // Error parsing userData
+      }
+    }
+  };
+
+  // Función para actualizar el usuario en todo el estado de la aplicación
+  const handleProfileUpdate = (updatedUser: { usuario: string; avatar?: string | null; }) => {
+    if (currentUser) {
+      const newUserData = {
+        ...currentUser,
+        ...updatedUser
+      };
+
+      setCurrentUser(newUserData);
+
+      // Actualizar sessionStorage para persistir el avatar
+      sessionStorage.setItem('userData', JSON.stringify(newUserData));
+    }
   };
 
   const handleLogout = () => {
@@ -158,7 +186,7 @@ function App() {
             element={
               !currentUser || currentUser.rol !== 'admin' ?
               <Navigate to="/login" replace /> :
-              <AdminLayout user={currentUser} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} />
+              <AdminLayout user={currentUser} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate} />
             }
           >
             <Route index element={<AdminDashboardPage />} />

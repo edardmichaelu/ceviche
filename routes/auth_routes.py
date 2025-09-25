@@ -14,39 +14,33 @@ def get_user_profile():
     """Obtener información del perfil del usuario actual"""
     try:
         current_user_id = get_jwt_identity()
-        print(f"🔍 JWT Identity: {current_user_id} (tipo: {type(current_user_id)})")
 
         # Convertir a int si es string
         if isinstance(current_user_id, str):
             try:
                 current_user_id = int(current_user_id)
-                print(f"✅ ID convertido a int: {current_user_id}")
             except ValueError:
-                print(f"❌ No se pudo convertir ID a int: {current_user_id}")
                 return jsonify({"error": "ID de usuario inválido"}), 400
 
         user = Usuario.query.get(current_user_id)
 
         if not user:
-            print(f"❌ Usuario no encontrado con ID: {current_user_id}")
             return jsonify({"error": "Usuario no encontrado"}), 404
 
-        print(f"✅ Usuario encontrado: {user.usuario} (ID: {user.id}, Rol: {user.rol})")
-        return jsonify({
-            "success": True,
-            "data": {
-                "id": user.id,
-                "usuario": user.usuario,
-                "rol": user.rol,
-                "activo": user.activo,
-                "email": user.correo
-            },
-            "message": "Perfil de usuario obtenido exitosamente"
-        })
+        # Excluir explícitamente la contraseña por seguridad
+        profile_data = {
+            "id": user.id,
+            "usuario": user.usuario,
+            "correo": user.correo,
+            "rol": user.rol,
+            "activo": user.activo,
+            "avatar": user.avatar,
+            "fecha_creacion": user.fecha_creacion.isoformat() if user.fecha_creacion else None,
+            "fecha_actualizacion": user.fecha_actualizacion.isoformat() if user.fecha_actualizacion else None
+        }
+
+        return jsonify(profile_data)
     except Exception as e:
-        print(f"❌ Error al obtener perfil: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return jsonify({"error": f"Error al obtener perfil: {str(e)}"}), 500
 
 @auth_bp.route('/test-jwt', methods=['GET'])
@@ -107,8 +101,11 @@ def login():
             "usuario": {
                 "id": user_obj.id,
                 "usuario": user_obj.usuario,
+                "correo": user_obj.correo,
                 "rol": user_obj.rol,
-                "estacion": user_obj.estacion
+                "estacion": user_obj.estacion,
+                "avatar": user_obj.avatar,  # ✅ Incluir avatar en login
+                "activo": user_obj.activo
             }
         }), 200
 
@@ -117,6 +114,43 @@ def login():
         # En un entorno de producción, aquí se registraría el error en un log
         print(f"Error al crear la sesión: {e}")
         return jsonify({"error": "No se pudo procesar el inicio de sesión. Inténtelo de nuevo."}), 500
+
+@auth_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_user_profile():
+    """Actualizar perfil del usuario actual"""
+    try:
+        current_user_id = get_jwt_identity()
+        print(f"🔍 Actualizando perfil del usuario: {current_user_id}")
+
+        # Convertir a int si es string
+        if isinstance(current_user_id, str):
+            try:
+                current_user_id = int(current_user_id)
+            except ValueError:
+                return jsonify({"error": "ID de usuario inválido"}), 400
+
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No se proporcionaron datos"}), 400
+
+        from services.auth_service import AuthService
+        user, error = AuthService.update_user_profile(current_user_id, data)
+
+        if error:
+            return jsonify(error), 400
+
+        return jsonify({
+            "success": True,
+            "message": "Perfil actualizado exitosamente",
+            "data": user.to_dict()
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error actualizando perfil: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Error actualizando perfil: {str(e)}"}), 500
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():

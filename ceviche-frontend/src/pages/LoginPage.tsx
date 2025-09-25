@@ -58,23 +58,22 @@ export function LoginPage({ onLoginSuccess, isDarkMode, setIsDarkMode }: LoginPa
         body: JSON.stringify({ identifier, password }),
       });
 
-      console.log('Login attempt:', { identifier, password });
-      console.log('Response status:', response.status);
 
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (response.ok) {
         toast.success(`¡Bienvenido de vuelta, ${data.usuario.usuario}!`);
         setTimeout(() => toast('Tu sesión se cerrará tras 5 minutos de inactividad.', { icon: '🕒' }), 1000);
         sessionStorage.setItem('accessToken', data.access_token);
+
+        // Guardar datos del usuario con avatar
         sessionStorage.setItem('userData', JSON.stringify(data.usuario));
+
         onLoginSuccess(); // Notifica al componente padre que el login fue exitoso
       } else {
         toast.error(data.error || 'Ocurrió un error inesperado.');
       }
     } catch (err) {
-      console.error('Login error:', err);
       toast.error('No se pudo conectar con el servidor. Verifica que el backend esté corriendo.');
     } finally {
       setIsLoading(false);

@@ -7,9 +7,11 @@ const BACKEND_URL = (() => {
   try {
     const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
     const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    return `${protocol}//${host}:5000`;
-  } catch {
-    return 'http://localhost:5000';
+    const backendUrl = `${protocol}//${host}:5000`;
+    return backendUrl;
+  } catch (error) {
+    const fallbackUrl = 'http://localhost:5000';
+    return fallbackUrl;
   }
 })();
 
@@ -51,9 +53,12 @@ export function ImageUpload({ currentImage, onImageChange, className = "", uploa
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { alert } = useModernModal();
 
-  // Actualizar el preview cuando cambie currentImage
+  // Debug: Ver qué imagen se está recibiendo
   useEffect(() => {
-    setPreview(currentImage || null);
+    // Solo actualizar si currentImage es diferente
+    if (currentImage !== preview) {
+      setPreview(currentImage || null);
+    }
   }, [currentImage]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,46 +90,36 @@ export function ImageUpload({ currentImage, onImageChange, className = "", uploa
       
       // Obtener token del sessionStorage
       const token = sessionStorage.getItem('accessToken');
-      console.log('Token from sessionStorage:', token ? 'Present' : 'Missing');
+
       if (!token) {
-        throw new Error('No hay token de autorización');
+        throw new Error('No hay token de autorización. Inicia sesión nuevamente.');
       }
 
-      console.log('Sending request to:', `${BACKEND_URL}${uploadUrl}`);
-      console.log('FormData contents:', Array.from(formData.entries()));
-      
-      const response = await fetch(`${BACKEND_URL}${uploadUrl}`, {
+      const fullUrl = `${BACKEND_URL}${uploadUrl}`;
+
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
         body: formData
       });
-      
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', response.status, errorText);
         throw new Error(`Error ${response.status}: ${errorText}`);
       }
       
       const result = await response.json();
-      console.log('Upload result:', result);
-      
+
       if (result.success) {
         // Usar la URL del servidor
         const serverUrl = `${BACKEND_URL}${result.file_url}`;
-        console.log('Server URL:', serverUrl);
         onImageChange(serverUrl);
-        console.log('Image change callback called with:', serverUrl);
       } else {
-        console.error('Upload failed:', result.error);
         throw new Error(result.error || 'Error subiendo archivo');
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
       alert('Error al subir la imagen. Inténtalo de nuevo.', 'error');
       setPreview(currentImage || null);
     } finally {
@@ -148,6 +143,7 @@ export function ImageUpload({ currentImage, onImageChange, className = "", uploa
     <div className={`relative ${className}`}>
       <input
         ref={fileInputRef}
+        id="avatar-input"
         type="file"
         accept="image/*"
         onChange={handleFileSelect}
@@ -156,7 +152,7 @@ export function ImageUpload({ currentImage, onImageChange, className = "", uploa
       
       <div
         onClick={handleClick}
-        className="w-20 h-20 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+        className="w-24 h-24 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50"
       >
         {preview ? (
           <div className="relative w-full h-full">
@@ -164,6 +160,10 @@ export function ImageUpload({ currentImage, onImageChange, className = "", uploa
               src={preview}
               alt="Preview"
               className="w-full h-full object-cover rounded-lg"
+              onError={(e) => {
+                setPreview(null);
+                onImageChange(null);
+              }}
             />
             {isUploading && (
               <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
@@ -205,7 +205,6 @@ export function MultiImageUpload({ productId, images = [], onImagesChange, onIma
 
   // Debug: verificar que las imágenes se estén recibiendo correctamente
   useEffect(() => {
-    console.log('MultiImageUpload recibió imágenes:', images);
   }, [images]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,7 +276,6 @@ export function MultiImageUpload({ productId, images = [], onImagesChange, onIma
         throw new Error(result.error || 'Error subiendo imágenes');
       }
     } catch (error) {
-      console.error('Error uploading images:', error);
       alert('Error al subir las imágenes. Inténtalo de nuevo.');
     } finally {
       setIsUploading(false);

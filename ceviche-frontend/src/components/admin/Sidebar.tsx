@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment, useState } from 'react';
+import { ProfileEditModal } from './ProfileEditModal';
 import {
     HomeIcon,
     BuildingStorefrontIcon,
@@ -15,7 +16,9 @@ import {
     TagIcon,
     CubeIcon,
     BeakerIcon,
-    LinkIcon
+    LinkIcon,
+    UserIcon,
+    PencilSquareIcon
 } from '@heroicons/react/24/solid';
 
 const MAIN_NAV_ITEMS = [
@@ -152,14 +155,24 @@ const RESERVAS_MENU_ITEMS = [
 ];
 
 interface SidebarProps {
-    user: { usuario: string; };
+    user: { usuario: string; avatar?: string | null; };
     onLogout: () => void;
     isSidebarOpen: boolean;
+    onProfileUpdate?: (updatedUser: { usuario: string; avatar?: string | null; }) => void;
 }
 
-export function Sidebar({ user, onLogout, isSidebarOpen }: SidebarProps) {
+export function Sidebar({ user, onLogout, isSidebarOpen, onProfileUpdate }: SidebarProps) {
     const [isReservasOpen, setIsReservasOpen] = useState(false);
     const [isIngredientesOpen, setIsIngredientesOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+    // Generar URL del avatar - usar avatar personalizado o fallback
+    const getAvatarUrl = () => {
+        if (user.avatar) {
+            return user.avatar;
+        }
+        return `https://ui-avatars.com/api/?name=${user.usuario.charAt(0)}&background=e2e8f0&color=475569&bold=true`;
+    };
     
     const baseLinkClasses = "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors duration-200";
     const hoverClasses = "hover:bg-sky-100 dark:hover:bg-slate-700";
@@ -274,7 +287,7 @@ export function Sidebar({ user, onLogout, isSidebarOpen }: SidebarProps) {
                 <Menu as="div" className="relative w-full text-left">
                     <div>
                         <Menu.Button className="group w-full flex items-center gap-3 rounded-md p-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-700">
-                            <img src={`https://ui-avatars.com/api/?name=${user.usuario.charAt(0)}&background=e2e8f0&color=475569&bold=true`} className="w-8 h-8 rounded-full flex-shrink-0" alt="Admin avatar" />
+                            <img src={getAvatarUrl()} className="w-8 h-8 rounded-full flex-shrink-0" alt="Admin avatar" />
                             <div className={`flex-grow text-left overflow-hidden transition-opacity duration-200 ${!isSidebarOpen ? 'opacity-0' : 'opacity-100'}`}>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.usuario}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Administrador</p>
@@ -296,6 +309,19 @@ export function Sidebar({ user, onLogout, isSidebarOpen }: SidebarProps) {
                                 <Menu.Item>
                                     {({ active }) => (
                                         <button
+                                            onClick={() => setIsProfileModalOpen(true)}
+                                            className={`${
+                                                active ? 'bg-gray-100 dark:bg-slate-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'
+                                            } group flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors duration-200`}
+                                        >
+                                            <PencilSquareIcon className="h-4 w-4" />
+                                            Editar Perfil
+                                        </button>
+                                    )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                    {({ active }) => (
+                                        <button
                                             onClick={onLogout}
                                             className={`${
                                                 active ? 'bg-gray-100 dark:bg-slate-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'
@@ -311,6 +337,19 @@ export function Sidebar({ user, onLogout, isSidebarOpen }: SidebarProps) {
                     </Transition>
                 </Menu>
             </div>
+
+            {/* Modal de Editar Perfil */}
+            <ProfileEditModal
+                isOpen={isProfileModalOpen}
+                onClose={() => setIsProfileModalOpen(false)}
+                onSuccess={(updatedUser) => {
+                    setIsProfileModalOpen(false);
+                    // Llamar al callback para actualizar el avatar sin recargar la página
+                    if (onProfileUpdate && updatedUser) {
+                        onProfileUpdate(updatedUser);
+                    }
+                }}
+            />
         </aside>
     );
 }
