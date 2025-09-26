@@ -1,7 +1,6 @@
 # Archivos de entorno y configuración sensible
 .env
 .env.local
-.env.production
 .env.development
 .env.*.local
 
@@ -18,8 +17,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Archivos subidos por usuarios
-uploads/
-/uploads
 
 # Directorios de dependencias
 node_modules/
