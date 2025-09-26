@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: ceviche_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - PROD_DATABASE_URI=mysql+pymysql://ceviche_user:${MYSQL_PASSWORD}@mysql:3306/ceviche_prod
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      - mysql
+    networks:
+      - ceviche_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: ceviche_mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=ceviche_prod
+      - MYSQL_USER=ceviche_user
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - ceviche_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: ceviche_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ceviche-frontend/dist:/usr/share/nginx/html
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+    networks:
+      - ceviche_network
+
+volumes:
+  mysql_data:
+
+networks:
+  ceviche_network:
+    driver: bridge
