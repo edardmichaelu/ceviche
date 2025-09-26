@@ -47,7 +47,7 @@ def create_app(config_name=None):
              r"/auth/*": {"origins": "*"},
              r"/uploads/*": {"origins": "*"}  # Permitir acceso a archivos estáticos
          },
-         origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000", "http://localhost:3001"],
+         origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000", "http://localhost:3001", "http://10.135.72.183:5173", "http://10.135.72.183:5174", "http://10.135.72.183:5000"],
          supports_credentials=True,
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
          allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     env_name = os.getenv('FLASK_ENV', 'development')
     app = create_app(env_name)
 
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
 # Para importación
 env_name = os.getenv('FLASK_ENV', 'development')

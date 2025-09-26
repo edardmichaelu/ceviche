@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { apiClient } from '../apiClient';
 
 // --- Interfaces e Iconos Mejorados ---
 const ICONS = {
@@ -52,29 +53,15 @@ export function LoginPage({ onLoginSuccess, isDarkMode, setIsDarkMode }: LoginPa
     }
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
-      });
+      const data: any = await apiClient.post('/auth/login', { identifier, password });
 
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(`¡Bienvenido de vuelta, ${data.usuario.usuario}!`);
-        setTimeout(() => toast('Tu sesión se cerrará tras 5 minutos de inactividad.', { icon: '🕒' }), 1000);
-        sessionStorage.setItem('accessToken', data.access_token);
-
-        // Guardar datos del usuario con avatar
-        sessionStorage.setItem('userData', JSON.stringify(data.usuario));
-
-        onLoginSuccess(); // Notifica al componente padre que el login fue exitoso
-      } else {
-        toast.error(data.error || 'Ocurrió un error inesperado.');
-      }
-    } catch (err) {
-      toast.error('No se pudo conectar con el servidor. Verifica que el backend esté corriendo.');
+      toast.success(`¡Bienvenido de vuelta, ${data.usuario.usuario}!`);
+      setTimeout(() => toast('Tu sesión se cerrará tras 5 minutos de inactividad.', { icon: '🕒' }), 1000);
+      sessionStorage.setItem('accessToken', data.access_token);
+      sessionStorage.setItem('userData', JSON.stringify(data.usuario));
+      onLoginSuccess();
+    } catch (err: any) {
+      toast.error(err?.message || 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.');
     } finally {
       setIsLoading(false);
     }
