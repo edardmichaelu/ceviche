@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from functools import wraps
 from models.menu import Producto, Categoria, ProductoImagen
@@ -239,8 +239,8 @@ def upload_producto_imagenes(producto_id):
 
         imagenes = request.files.getlist('imagenes')
 
-        # Crear directorio si no existe
-        upload_dir = os.path.join('uploads', 'productos')
+        # Crear directorio absoluto dentro del proyecto si no existe
+        upload_dir = os.path.join(current_app.root_path, 'uploads', 'productos')
         os.makedirs(upload_dir, exist_ok=True)
 
         imagenes_subidas = []
@@ -253,21 +253,35 @@ def upload_producto_imagenes(producto_id):
                    imagen.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
                     continue
 
-                filename = secure_filename(imagen.filename)
-                # Agregar timestamp para evitar conflictos
+                # Normalizar y limitar nombre de archivo para cumplir restricciones de BD
+                from os.path import splitext
+                original_name = imagen.filename
+                name_part, ext = splitext(original_name)
+                ext = ext.lower()
+                safe_base = secure_filename(name_part) or 'img'
+                # Limitar base para que la URL total no exceda 255 y descripción 200
+                # Prefijo timestamp_ + base + ext, URL tiene "/uploads/productos/"
                 import time
                 timestamp = str(int(time.time()))
-                filename = f"{timestamp}_{filename}"
+                url_prefix = "/uploads/productos/"
+                # Calcular espacio disponible para base en URL (255 - len(prefix) - len(timestamp_) - len(ext))
+                reserved = len(url_prefix) + len(timestamp) + 1 + len(ext)  # 1 por '_' antes de la base
+                max_url_len = 255
+                max_base_for_url = max(1, max_url_len - reserved)
+                truncated_base = safe_base[:max_base_for_url]
+                filename = f"{timestamp}_{truncated_base}{ext}"
                 filepath = os.path.join(upload_dir, filename)
 
                 imagen.save(filepath)
 
-                # Crear registro en la base de datos
+                # Crear registro en la base de datos (cuidar longitudes)
+                imagen_url = f"{url_prefix}{filename}"
+                descripcion = (original_name[:200]) if original_name else None
                 nueva_imagen = ProductoImagen(
                     producto_id=producto_id,
-                    imagen_url=f"/uploads/productos/{filename}",
+                    imagen_url=imagen_url,
                     orden=len(producto.imagenes) + len(imagenes_subidas),
-                    descripcion=imagen.filename
+                    descripcion=descripcion
                 )
 
                 db.session.add(nueva_imagen)
@@ -355,7 +369,9 @@ def delete_producto_imagen(imagen_id):
 
         # Eliminar archivo físico si existe
         if imagen.imagen_url:
-            filepath = imagen.imagen_url.replace('/uploads/', 'uploads/')
+            # Convertir URL pública a ruta absoluta en disco
+            relative_path = imagen.imagen_url.lstrip('/').replace('/', os.sep)
+            filepath = os.path.join(current_app.root_path, relative_path)
             if os.path.exists(filepath):
                 os.remove(filepath)
 
