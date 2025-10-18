@@ -49,7 +49,7 @@ def create_app(config_name=None):
          },
          origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000", "http://localhost:3001", "http://10.135.72.183:5173", "http://10.135.72.183:5174", "http://10.135.72.183:5000"],
          supports_credentials=True,
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
          allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
          expose_headers=["Authorization", "Content-Type"])
 
@@ -201,7 +201,7 @@ def create_app(config_name=None):
             headers = response.headers
             headers['Access-Control-Allow-Origin'] = origin or '*'
             headers['Access-Control-Allow-Credentials'] = 'true'
-            headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
             headers['Access-Control-Allow-Headers'] = request.headers.get('Access-Control-Request-Headers', 'Authorization, Content-Type, X-Requested-With')
             headers['Vary'] = 'Origin'
             return response

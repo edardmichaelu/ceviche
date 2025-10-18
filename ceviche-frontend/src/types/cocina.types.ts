@@ -174,9 +174,15 @@ export const KANBAN_ORDENES_COLUMNS = {
 export const KANBAN_COLUMNS = {
     pendiente: {
         titulo: 'Pendiente',
-        icono: '🍳',
+        icono: '⏳',
         color: 'bg-orange-500',
         estado: 'pendiente'
+    },
+    en_cola: {
+        titulo: 'En Cola',
+        icono: '📋',
+        color: 'bg-yellow-500',
+        estado: 'en_cola'
     },
     preparando: {
         titulo: 'Preparando',
@@ -189,6 +195,12 @@ export const KANBAN_COLUMNS = {
         icono: '✅',
         color: 'bg-green-500',
         estado: 'listo'
+    },
+    servido: {
+        titulo: 'Servido',
+        icono: '🍽️',
+        color: 'bg-blue-500',
+        estado: 'servido'
     },
     cancelado: {
         titulo: 'Cancelado',

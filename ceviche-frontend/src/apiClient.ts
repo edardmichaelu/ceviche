@@ -15,15 +15,6 @@ const getAuthToken = () => sessionStorage.getItem('accessToken');
 
 // Función auxiliar para manejar las respuestas de la API
 const handleResponse = async (response: Response) => {
-  if (response.status === 401) {
-    // Si el token es inválido o ha expirado, limpiamos la sesión y recargamos la página.
-    // Esto efectivamente deslogueará al usuario.
-    sessionStorage.removeItem('accessToken');
-    sessionStorage.removeItem('userData');
-    window.location.href = '/login';
-    throw new Error('Sesión expirada o inválida.');
-  }
-
   // Verificar si la respuesta es HTML (error 500 que devuelve página HTML)
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('text/html')) {
@@ -35,6 +26,16 @@ const handleResponse = async (response: Response) => {
   const data = await response.json();
 
   if (!response.ok) {
+    // Solo tratar 401 como error de sesión si NO viene del endpoint de login
+    if (response.status === 401 && !response.url.includes('/auth/login')) {
+      // Si el token es inválido o ha expirado, limpiamos la sesión y recargamos la página.
+      // Esto efectivamente deslogueará al usuario.
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('userData');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada o inválida.');
+    }
+
     // Lanza un error con el mensaje del backend si la respuesta no es exitosa
     const error = (data && data.error) || response.statusText;
     throw new Error(error);
@@ -92,6 +93,13 @@ export const apiClient = {
 
   del: <T>(endpoint: string): Promise<T> => {
     return createRequest(endpoint, { method: 'DELETE' });
+  },
+
+  patch: <T>(endpoint: string, body?: any): Promise<T> => {
+    return createRequest(endpoint, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined
+    });
   },
 
   // Métodos públicos (sin autenticación)

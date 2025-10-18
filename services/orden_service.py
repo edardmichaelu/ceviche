@@ -82,6 +82,18 @@ class OrdenService:
             raise e
 
     @staticmethod
+    def obtener_item_por_id(item_id):
+        """Obtiene un item de orden por ID"""
+        try:
+            from models.order import ItemOrden
+            item = ItemOrden.query.get(item_id)
+            if not item:
+                raise ValueError("Item no encontrado")
+            return item
+        except Exception as e:
+            raise e
+
+    @staticmethod
     def obtener_ordenes_por_mozo(mozo_id):
         """Obtiene órdenes de un mozo específico"""
         try:
@@ -166,9 +178,10 @@ class OrdenService:
 
             # Si todos los items están servidos, marcar orden como servida
             if estado == 'servido':
-                items_pendientes = ItemOrden.query.filter_by(
-                    orden_id=item.orden_id,
-                    estado='pendiente'
+                from sqlalchemy import not_
+                items_pendientes = ItemOrden.query.filter(
+                    ItemOrden.orden_id == item.orden_id,
+                    not_(ItemOrden.estado == 'servido')
                 ).count()
 
                 if items_pendientes == 0:

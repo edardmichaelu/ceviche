@@ -71,10 +71,10 @@ def login():
     identifier = data.get('identifier')
     password = data.get('password')
 
-    user_obj = AuthService.login_user(identifier, password)
-
-    if not user_obj:
-        return jsonify({"error": "Credenciales inválidas"}), 401
+    try:
+        user_obj = AuthService.login_user(identifier, password)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 401
 
     if not user_obj.activo:
         return jsonify({"error": "Este usuario ha sido desactivado."}), 403

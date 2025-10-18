@@ -647,7 +647,7 @@ of this software and associated documentation files...
 
 ## 👥 Equipo de Desarrollo
 
-- **Desarrollador Principal**: Eduardo Dávila
+- **Desarrollador Principal**: Edward U
 - **Arquitectura**: Sistema modular escalable
 - **UI/UX**: Diseño moderno y responsive
 - **DevOps**: Pipelines CI/CD (en desarrollo)

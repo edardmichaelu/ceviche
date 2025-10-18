@@ -29,6 +29,7 @@ export function KanbanCard({ item, orden, onAvanzar, onCancelar }: KanbanCardPro
                 </div>
                 <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ml-2 ${getEstadoColorGlobal(item.estado)}`}>
                     {getEstadoIconGlobal(item.estado)}
+                    <span className="ml-1">{item.estado.toUpperCase()}</span>
                 </div>
             </div>
 

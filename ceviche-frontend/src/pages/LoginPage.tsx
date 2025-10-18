@@ -61,7 +61,18 @@ export function LoginPage({ onLoginSuccess, isDarkMode, setIsDarkMode }: LoginPa
       sessionStorage.setItem('userData', JSON.stringify(data.usuario));
       onLoginSuccess();
     } catch (err: any) {
-      toast.error(err?.message || 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.');
+      // Mostrar mensaje específico según el tipo de error
+      if (err?.message?.includes('Usuario no encontrado')) {
+        toast.error('Usuario no encontrado. Verifica que el usuario exista.');
+      } else if (err?.message?.includes('Contraseña incorrecta')) {
+        toast.error('Contraseña incorrecta. Verifica tu contraseña e intenta nuevamente.');
+      } else if (err?.message?.includes('Este usuario ha sido desactivado')) {
+        toast.error('Tu cuenta ha sido desactivada. Contacta al administrador.');
+      } else if (err?.message?.includes('Error interno del servidor')) {
+        toast.error('Error interno del servidor. Intenta nuevamente más tarde.');
+      } else {
+        toast.error(err?.message || 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.');
+      }
     } finally {
       setIsLoading(false);
     }

@@ -47,7 +47,7 @@ class ItemOrden(db.Model):
     producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Numeric(10, 2), nullable=False)
-    estado = db.Column(db.Enum('pendiente', 'en_cola', 'preparando', 'listo', 'servido', 'cancelado'), nullable=False)
+    estado = db.Column(db.Enum('pendiente', 'en_cola', 'preparando', 'listo', 'servido', 'cancelado'), nullable=False, default='pendiente')
     estacion = db.Column(db.Enum('frio', 'caliente', 'bebida', 'postre'))
     fecha_inicio = db.Column(db.DateTime)
     fecha_listo = db.Column(db.DateTime)

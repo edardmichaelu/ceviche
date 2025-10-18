@@ -86,13 +86,14 @@ const CocinaPage: React.FC = () => {
         try {
             console.log('🍳 Avanzando item:', itemId);
 
-            const response = await apiClient.patch(`/api/orden/items/${itemId}/avanzar`, {});
+            const response = await apiClient.patch(`/api/orden/items/${itemId}/avanzar`);
 
-            if (response?.data?.success) {
+            if (response?.success) {
                 toast.success('✅ Item avanzado correctamente');
-                setForceRefresh(prev => prev + 1);
+                // Forzar recarga inmediata de los datos
+                await loadOrdenes();
             } else {
-                throw new Error('Error al avanzar item');
+                throw new Error(response?.error || 'Error al avanzar item');
             }
         } catch (error: any) {
             console.error('🍳 Error avanzando item:', error);
@@ -100,20 +101,21 @@ const CocinaPage: React.FC = () => {
             const errorMessage = ErrorHandler.showErrorNotification(error, 'avanzar item cocina');
             toast.error(errorMessage);
         }
-    }, []);
+    }, [loadOrdenes]);
 
     // === FUNCIÓN PARA CANCELAR ITEM ===
     const handleCancelarItem = useCallback(async (itemId: number) => {
         try {
             console.log('🍳 Cancelando item:', itemId);
 
-            const response = await apiClient.patch(`/api/orden/items/${itemId}/cancelar`, {});
+            const response = await apiClient.patch(`/api/orden/items/${itemId}/cancelar`);
 
-            if (response?.data?.success) {
+            if (response?.success) {
                 toast.success('❌ Item cancelado correctamente');
-                setForceRefresh(prev => prev + 1);
+                // Forzar recarga inmediata de los datos
+                await loadOrdenes();
             } else {
-                throw new Error('Error al cancelar item');
+                throw new Error(response?.error || 'Error al cancelar item');
             }
         } catch (error: any) {
             console.error('🍳 Error cancelando item:', error);
@@ -121,7 +123,7 @@ const CocinaPage: React.FC = () => {
             const errorMessage = ErrorHandler.showErrorNotification(error, 'cancelar item cocina');
             toast.error(errorMessage);
         }
-    }, []);
+    }, [loadOrdenes]);
 
     // === FUNCIÓN PARA ACTUALIZAR ESTADO DE ORDEN ===
     const handleActualizarEstadoOrden = useCallback(async (ordenId: number, nuevoEstado: string) => {
@@ -130,7 +132,12 @@ const CocinaPage: React.FC = () => {
 
             // Usar fetch directamente para tener más control sobre la respuesta
             const token = sessionStorage.getItem('accessToken');
-            const response = await fetch(`http://localhost:5000/api/orden/${ordenId}/estado`, {
+            const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
+            const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+            const port = 5000;
+            const baseUrl = `${protocol}//${host}:${port}`;
+
+            const response = await fetch(`${baseUrl}/api/orden/${ordenId}/estado`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -332,7 +339,7 @@ const CocinaPage: React.FC = () => {
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('newOrder', handleNewOrder as EventListener);
         };
-    }, []); // ← Remover loadOrdenes para evitar bucles
+    }, [loadOrdenes]); // ← loadOrdenes dependency added
 
     // === RENDER PRINCIPAL ===
         return (
@@ -479,6 +486,24 @@ const CocinaPage: React.FC = () => {
                     onVerDetallesOrden={handleVerDetallesOrden}
                     onEliminarOrden={handleEliminarOrden}
                 />
+
+                {/* Debug info */}
+                {kanbanMode === 'items' && (
+                    <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Debug - Items Mode</h4>
+                        <div className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                            <p>Total órdenes: {ordenes.length}</p>
+                            <p>Total items: {ordenes.flatMap(o => o.items || []).length}</p>
+                            <p>Items por estado:</p>
+                            <ul className="ml-4">
+                                {['pendiente', 'en_cola', 'preparando', 'listo', 'servido', 'cancelado'].map(estado => {
+                                    const count = ordenes.flatMap(o => o.items || []).filter(item => item.estado === estado).length;
+                                    return <li key={estado}>{estado}: {count}</li>;
+                                })}
+                            </ul>
+                        </div>
+                    </div>
+                )}
 
                 {/* Loading */}
                 {loading && (

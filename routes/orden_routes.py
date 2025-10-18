@@ -3,6 +3,7 @@ from services.orden_service import OrdenService
 from services.caja_service import CajaService
 from services.error_handler import ErrorHandler
 from routes.admin_routes import admin_required
+from routes.cocina_routes import cocina_or_admin_required
 from routes.mesero_routes import mesero_or_admin_required
 from functools import wraps
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -389,6 +390,128 @@ def actualizar_estado_item(item_id):
         return jsonify(error_resp), status_code
     except Exception as e:
         error_dict = ErrorHandler.handle_service_error(e, 'actualizar estado de item', 'orden')
+        error_resp, status_code = ErrorHandler.create_error_response(error_dict, 500)
+        return jsonify(error_resp), status_code
+
+@orden_bp.route('/items/<int:item_id>/avanzar', methods=['PATCH'])
+@cocina_or_admin_required
+def avanzar_item(item_id):
+    """Avanzar el estado de un item individual (en_cola -> preparando -> listo -> servido)"""
+    try:
+        item = OrdenService.obtener_item_por_id(item_id)
+        if not item:
+            error_data = {
+                "error": 'Item no encontrado',
+                "code": 'NOT_FOUND',
+                "details": 'El item especificado no existe'
+            }
+            error_resp, status_code = ErrorHandler.create_error_response(error_data, 404)
+            return jsonify(error_resp), status_code
+
+        # Determinar el siguiente estado válido
+        flujo_estados = ['en_cola', 'preparando', 'listo', 'servido']
+        current_index = flujo_estados.index(item.estado) if item.estado in flujo_estados else -1
+
+        if current_index == -1 or current_index >= len(flujo_estados) - 1:
+            error_data = {
+                "error": 'No se puede avanzar más',
+                "code": 'INVALID_STATE',
+                "details": f'El item ya está en el último estado válido ({item.estado})'
+            }
+            error_resp, status_code = ErrorHandler.create_error_response(error_data, 400)
+            return jsonify(error_resp), status_code
+
+        siguiente_estado = flujo_estados[current_index + 1]
+        item_actualizado = OrdenService.actualizar_estado_item(item_id, siguiente_estado)
+
+        return jsonify(ErrorHandler.create_success_response(
+            data=item_actualizado.to_dict(),
+            message=f'Item avanzado a {siguiente_estado}'
+        )), 200
+
+    except ValueError as e:
+        error_data = {
+            "error": str(e),
+            "code": 'VALIDATION_ERROR',
+            "details": str(e)
+        }
+        error_resp, status_code = ErrorHandler.create_error_response(error_data, 400)
+        return jsonify(error_resp), status_code
+    except Exception as e:
+        error_dict = ErrorHandler.handle_service_error(e, 'avanzar item', 'orden')
+        error_resp, status_code = ErrorHandler.create_error_response(error_dict, 500)
+        return jsonify(error_resp), status_code
+
+@orden_bp.route('/items/<int:item_id>/cancelar', methods=['PATCH'])
+@cocina_or_admin_required
+def cancelar_item(item_id):
+    """Cancelar un item individual"""
+    try:
+        item = OrdenService.obtener_item_por_id(item_id)
+        if not item:
+            error_data = {
+                "error": 'Item no encontrado',
+                "code": 'NOT_FOUND',
+                "details": 'El item especificado no existe'
+            }
+            error_resp, status_code = ErrorHandler.create_error_response(error_data, 404)
+            return jsonify(error_resp), status_code
+
+        if item.estado == 'servido':
+            error_data = {
+                "error": 'No se puede cancelar item servido',
+                "code": 'INVALID_STATE',
+                "details": 'Los items servidos no se pueden cancelar'
+            }
+            error_resp, status_code = ErrorHandler.create_error_response(error_data, 400)
+            return jsonify(error_resp), status_code
+
+        item_actualizado = OrdenService.actualizar_estado_item(item_id, 'cancelado')
+
+        return jsonify(ErrorHandler.create_success_response(
+            data=item_actualizado.to_dict(),
+            message='Item cancelado exitosamente'
+        )), 200
+
+    except ValueError as e:
+        error_data = {
+            "error": str(e),
+            "code": 'VALIDATION_ERROR',
+            "details": str(e)
+        }
+        error_resp, status_code = ErrorHandler.create_error_response(error_data, 400)
+        return jsonify(error_resp), status_code
+    except Exception as e:
+        error_dict = ErrorHandler.handle_service_error(e, 'cancelar item', 'orden')
+        error_resp, status_code = ErrorHandler.create_error_response(error_dict, 500)
+        return jsonify(error_resp), status_code
+
+# --- RUTAS PARA COCINA ---
+
+@orden_bp.route('/cocina/pendientes', methods=['GET'])
+@cocina_or_admin_required
+def get_ordenes_cocina():
+    """Obtiene órdenes pendientes para cocina (con items detallados)"""
+    try:
+        # Obtener órdenes activas (no servidas ni canceladas)
+        ordenes = OrdenService.obtener_ordenes_activas()
+
+        # Filtrar solo las que tienen items pendientes de preparación
+        ordenes_con_items = []
+        for orden in ordenes:
+            items_pendientes = [item for item in orden.items if item.estado in ['pendiente', 'en_cola', 'preparando', 'listo']]
+            if items_pendientes:
+                orden_dict = orden.to_dict()
+                orden_dict['items'] = [item.to_dict() for item in items_pendientes]
+                ordenes_con_items.append(orden_dict)
+
+        return jsonify(ErrorHandler.create_success_response(
+            data=ordenes_con_items,
+            message='Órdenes pendientes de cocina obtenidas exitosamente'
+        )), 200
+
+    except Exception as e:
+        error_dict = ErrorHandler.handle_service_error(e, 'obtener órdenes cocina', 'orden')
         error_resp, status_code = ErrorHandler.create_error_response(error_dict, 500)
         return jsonify(error_resp), status_code
 

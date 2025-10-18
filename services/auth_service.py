@@ -9,7 +9,7 @@ class AuthService:
     def login_user(identifier, password):
         """
         Valida las credenciales del usuario usando su nombre de usuario O su correo electrónico.
-        
+
         Args:
             identifier (str): El nombre de usuario o el correo del usuario.
             password (str): La contraseña del usuario.
@@ -22,11 +22,15 @@ class AuthService:
             or_(Usuario.usuario.ilike(identifier), Usuario.correo.ilike(identifier))
         ).first()
 
-        # Verificar si el usuario existe y si la contraseña es correcta
-        if user_obj and check_password_hash(user_obj.contrasena, password):
-            return user_obj
-        
-        return None
+        # Si no encuentra el usuario
+        if not user_obj:
+            raise ValueError("Usuario no encontrado")
+
+        # Si el usuario existe pero la contraseña es incorrecta
+        if not check_password_hash(user_obj.contrasena, password):
+            raise ValueError("Contraseña incorrecta")
+
+        return user_obj
 
     @staticmethod
     def logout_user(token):
